@@ -1,12 +1,15 @@
 services:
   - type: web
-    name: perfect-release-api
+    name: perfect-release-cricket-ball
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --workers 1 --timeout 300 --bind 0.0.0.0:$PORT
+    startCommand: gunicorn app:app --workers 1 --timeout 600 --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+    # ffmpeg is needed to re-encode video with -movflags +faststart for browser playback
+    packages:
+      - ffmpeg
     disk:
       name: video-storage
       mountPath: /opt/render/project/src/static
