@@ -3,7 +3,7 @@ import mediapipe as mp
 import os
 import numpy as np
 import time
-from flask import Flask, request, render_template, jsonify, send_file, make_response
+from flask import Flask, request, render_template, jsonify, send_file
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -51,28 +51,25 @@ def process_bowling_video(video_path, output_path):
     orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
-    time_per_frame = 1.0 / fps if fps > 0 else 0.0167
+    fps = fps if fps > 0 else 25.0
+    time_per_frame = 1.0 / fps
 
-    # WEB-COMPATIBLE FIX: Force 'avc1' (H.264) container encoding so HTML5 web browsers can play it natively
-   fps = fps if fps > 0 else 25.0
+    # WEB-COMPATIBLE FIX: Attempt native H.264 encoding first for absolute web compliance
+    try:
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')
+        out = cv2.VideoWriter(output_path, fourcc, fps, (orig_w, orig_h))
+    except Exception:
+        out = None
 
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter(
-    output_path,
-    fourcc,
-    fps,
-    (orig_w, orig_h)
-)
-
-if not out.isOpened():
-    print("ERROR: Could not create output video")
-    return False, {}
-
-    # HARDWARE FALLBACK: If system packages lack avc1 bindings, drop down to standard mp4v safely
-    if not out.isOpened():
-        print("⚠️ H.264 compilation failed. Dropping to default mp4v container layer...")
+    # HARDWARE FALLBACK: Drop down safely to alternative browser-friendly mp4v container layer
+    if out is None or not out.isOpened():
+        print("⚠️ H.264 avc1 compilation failed/unsupported. Dropping to default mp4v container layer...")
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
+        out = cv2.VideoWriter(output_path, fourcc, fps, (orig_w, orig_h))
+
+    if not out.isOpened():
+        print("ERROR: Could not create output video file writer system.")
+        return False, {}
 
     prev_hip_x = None
     stride_count = 0
@@ -130,7 +127,7 @@ if not out.isOpened():
                             (int(r_knee.x * w) + 20, int(r_knee.y * h) - 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, r_color, 3, cv2.LINE_AA)
 
-            # Arm Release Slant Angle & Relative Delivery Point Elevation
+            # Arm Release Slant Angle & Elevation
             if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5 and l_shoulder.visibility > 0.5:
                 highest_wrist = l_wrist if l_wrist.y < r_wrist.y else r_wrist
                 corresponding_shoulder = l_shoulder if highest_wrist == l_wrist else r_shoulder
@@ -213,7 +210,7 @@ def upload_video():
         os.remove(input_path)
     file.save(input_path)
 
-    # ANTI-CACHE BUG FIX: Generate a completely unique filename using a timestamp to destroy browser memory patterns
+    # Generate a unique timestamp to break frontend CDN or browser asset caching
     epoch_time = int(time.time())
     output_filename = f'analyzed_{epoch_time}.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
@@ -224,21 +221,20 @@ def upload_video():
 
     if success:
         return jsonify({
-            'video_url': f'/static/{output_filename}?v={epoch_time}',
+            'video_url': f'/static/{output_filename}',
             'summary': summary
         })
     else:
         return jsonify({'error': 'Video processing failed'}), 500
 
 
-# SERVER STREAM FIX: Overhaul file distribution to serve direct stream headers that bypass Render's Gzip filter
 @app.route('/static/<filename>')
 def serve_video(filename):
     video_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
-
     if not os.path.exists(video_path):
-        return jsonify({'error': 'Video not found'}), 404
+        return jsonify({'error': 'Video asset not found'}), 404
 
+    # Using conditional loop ranges allows direct scrubbing and partial downloads on mobile devices
     return send_file(
         video_path,
         mimetype='video/mp4',
