@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Allow cross-origin requests from your WordPress site globally
+# Allow cross-origin requests globally (essential for your mobile/WordPress connection)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure upload and output folders
@@ -45,7 +45,7 @@ def process_bowling_video(video_path, output_path):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return False, {}  # <--- FIXED: Now safely returns two parameters on error
+        return False, {}  # Safeguard fallback
 
     orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -132,9 +132,11 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"HAND REL: {int(release_height_score)} pts",
                             (wrist_pixel_x + 25, wrist_pixel_y - 45),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 254), 3, cv2.LINE_AA)
+                
+                # FIX: Replaced syntax breaking character with precise RGB Tuple for pure Amber-Yellow
                 cv2.putText(frame, f"ARM ANGLE: {int(arm_angle_deg)} deg",
                             (wrist_pixel_x + 25, wrist_pixel_y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 242, 黄), 3, cv2.LINE_AA)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 230, 245), 3, cv2.LINE_AA)
 
             # Strides
             if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
@@ -191,7 +193,6 @@ def upload_video():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
 
-    # Ensure clean directory names
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input_raw.mp4')
     file.save(input_path)
 
@@ -208,7 +209,7 @@ def upload_video():
             'summary': summary
         })
     else:
-        return jsonify({'error': 'Video processing engine failed to initialize'}), 500
+        return jsonify({'error': 'Video processing failed'}), 500
 
 
 @app.route('/static/<filename>')
