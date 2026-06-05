@@ -3,12 +3,12 @@ import mediapipe as mp
 import os
 import numpy as np
 import time
-from flask import Flask, request, render_template, send_from_directory, jsonify
+from flask import Flask, request, render_template, jsonify, send_file, make_response
 from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Allow cross-origin requests globally (crucial for WordPress and phone access)
+# Allow cross-origin requests globally (crucial for local testing and phone access)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure upload and output folders
@@ -46,14 +46,14 @@ def process_bowling_video(video_path, output_path):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return False, {}  # Prevent unpacking crash fallback
+        return False, {}
 
     orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     time_per_frame = 1.0 / fps if fps > 0 else 0.0167
 
-    # FIX: Use 'avc1' (H.264) codec container so the resulting video can be natively streamed by web browsers
+    # STEP 1 FIX: Use 'avc1' (H.264) codec container so the resulting video can be natively streamed by web browsers
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
@@ -210,7 +210,7 @@ def upload_video():
     print("✅ Processing complete!")
 
     if success:
-        # FIX: Appending an epoch timestamp query (?t=...) forces the browser to discard cached 
+        # Appending an epoch timestamp query (?t=...) forces the browser to discard cached 
         # copies of older runs and cleanly stream the brand new processed video file every time.
         epoch_time = int(time.time())
         return jsonify({
@@ -221,9 +221,25 @@ def upload_video():
         return jsonify({'error': 'Video processing failed'}), 500
 
 
+# STEP 2 FIX: Complete overhaul to serve clean raw chunk data to HTML5 video components
 @app.route('/static/<filename>')
 def serve_video(filename):
-    return send_from_directory(app.config['OUTPUT_FOLDER'], filename)
+    video_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
+    
+    # Check if the file exists safely
+    if not os.path.exists(video_path):
+        return jsonify({'error': 'Video asset not found'}), 404
+
+    # Build a raw cloud-optimized streaming response directly from file bytes
+    response = make_response(send_file(video_path, mimetype='video/mp4'))
+    
+    # Force headers that bypass Render's aggressive Gzip layers and eliminate browser caching lag
+    response.headers['Content-Type'] = 'video/mp4'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response
 
 
 if __name__ == '__main__':
