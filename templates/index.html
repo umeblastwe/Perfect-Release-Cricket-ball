@@ -8,120 +8,172 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --cyan:    #00f2fe;
-    --yellow:  #f5e642;
-    --bg:      #080a0f;
-    --surface: #0e1118;
-    --border:  rgba(255,255,255,0.07);
-    --text:    #e8eaf2;
-    --muted:   #525769;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body:    'DM Sans', sans-serif;
-    --radius: 20px;
-  }
-  html { scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.6; overflow-x: hidden; }
-  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.4; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --cyan:   #00f2fe;
+  --yellow: #f5e642;
+  --green:  #22c55e;
+  --red:    #ef4444;
+  --orange: #f97316;
+  --bg:      #080a0f;
+  --surface: #0e1118;
+  --surface2:#131720;
+  --border:  rgba(255,255,255,0.07);
+  --text:    #e8eaf2;
+  --muted:   #525769;
+  --font-d: 'Bebas Neue', sans-serif;
+  --font-b: 'DM Sans', sans-serif;
+  --r: 20px;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-b); line-height: 1.6; overflow-x: hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; opacity:.4; }
 
-  /* ── Hero ── */
-  .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px 80px; text-align: center; overflow: hidden; }
-  .hero::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,242,254,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
-  .hero-badge { display: inline-block; border: 1px solid rgba(0,242,254,0.3); color: var(--cyan); font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 6px 18px; border-radius: 999px; margin-bottom: 28px; position: relative; z-index: 1; animation: fadeUp 0.6s ease both; }
-  .hero-title { font-family: var(--font-display); font-size: clamp(4rem, 14vw, 10rem); line-height: 0.92; letter-spacing: 2px; position: relative; z-index: 1; animation: fadeUp 0.7s 0.1s ease both; }
-  .hero-title .line-cyan { color: var(--cyan); }
-  .hero-title .line-white { color: #fff; }
-  .hero-title .line-yellow { color: var(--yellow); }
-  .hero-sub { margin-top: 28px; font-size: clamp(0.95rem, 2.5vw, 1.15rem); color: var(--muted); max-width: 480px; font-weight: 300; position: relative; z-index: 1; animation: fadeUp 0.7s 0.2s ease both; }
-  .hero-cta { margin-top: 44px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; animation: fadeUp 0.7s 0.3s ease both; }
-  .btn-primary { background: var(--cyan); color: #000; font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.5px; padding: 14px 32px; border: none; border-radius: 999px; cursor: pointer; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 0 24px rgba(0,242,254,0.25); }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,242,254,0.4); }
-  .btn-ghost { background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.9rem; padding: 14px 32px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; text-decoration: none; transition: border-color 0.2s, color 0.2s; }
-  .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
-  .scroll-hint { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; z-index: 1; animation: fadeUp 1s 0.8s ease both; }
-  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--cyan), transparent); animation: scrollPulse 2s ease infinite; }
-  @keyframes scrollPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+/* ── Hero ── */
+.hero { position:relative; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 24px 80px; text-align:center; overflow:hidden; }
+.hero::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-55%); width:700px; height:700px; background:radial-gradient(circle,rgba(0,242,254,.08) 0%,transparent 70%); pointer-events:none; z-index:0; }
+.hero-badge { display:inline-block; border:1px solid rgba(0,242,254,.3); color:var(--cyan); font-size:.7rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; padding:6px 18px; border-radius:999px; margin-bottom:28px; position:relative; z-index:1; animation:fadeUp .6s ease both; }
+.hero-title { font-family:var(--font-d); font-size:clamp(3.6rem,13vw,9rem); line-height:.92; letter-spacing:2px; position:relative; z-index:1; animation:fadeUp .7s .1s ease both; }
+.hero-title .cy { color:var(--cyan); } .hero-title .wh { color:#fff; } .hero-title .ye { color:var(--yellow); }
+.hero-sub { margin-top:24px; font-size:clamp(.9rem,2.5vw,1.1rem); color:var(--muted); max-width:460px; font-weight:300; position:relative; z-index:1; animation:fadeUp .7s .2s ease both; }
+.hero-cta { margin-top:40px; display:flex; gap:14px; flex-wrap:wrap; justify-content:center; position:relative; z-index:1; animation:fadeUp .7s .3s ease both; }
+.btn-p { background:var(--cyan); color:#000; font-family:var(--font-b); font-weight:600; font-size:.9rem; letter-spacing:.5px; padding:14px 32px; border:none; border-radius:999px; cursor:pointer; text-decoration:none; transition:transform .2s,box-shadow .2s; box-shadow:0 0 24px rgba(0,242,254,.25); }
+.btn-p:hover { transform:translateY(-2px); box-shadow:0 0 40px rgba(0,242,254,.4); }
+.btn-g { background:transparent; color:var(--text); font-family:var(--font-b); font-weight:500; font-size:.9rem; padding:14px 32px; border:1px solid var(--border); border-radius:999px; cursor:pointer; text-decoration:none; transition:border-color .2s,color .2s; }
+.btn-g:hover { border-color:var(--cyan); color:var(--cyan); }
+.scroll-hint { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--muted); font-size:.65rem; letter-spacing:2px; text-transform:uppercase; z-index:1; animation:fadeUp 1s .8s ease both; }
+.scroll-line { width:1px; height:36px; background:linear-gradient(to bottom,var(--cyan),transparent); animation:sp 2s ease infinite; }
+@keyframes sp { 0%,100%{opacity:.3} 50%{opacity:1} }
 
-  /* ── Stats strip ── */
-  .stats-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
-  .stat-item { background: var(--bg); padding: 28px 20px; text-align: center; }
-  .stat-number { font-family: var(--font-display); font-size: 2.8rem; color: var(--cyan); line-height: 1; }
-  .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
+/* ── Stats strip ── */
+.stats-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border-top:1px solid var(--border); border-bottom:1px solid var(--border); position:relative; z-index:1; }
+.stat-item { background:var(--bg); padding:24px 16px; text-align:center; }
+.stat-number { font-family:var(--font-d); font-size:2.6rem; color:var(--cyan); line-height:1; }
+.stat-label { font-size:.68rem; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-top:6px; }
+.divider { width:100%; height:1px; background:var(--border); position:relative; z-index:1; }
 
-  /* ── How it works ── */
-  .section { padding: 80px 24px; max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
-  .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); margin-bottom: 12px; }
-  .section-title { font-family: var(--font-display); font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; margin-bottom: 16px; }
-  .section-body { color: var(--muted); font-size: 1rem; font-weight: 300; max-width: 520px; margin-bottom: 48px; }
-  .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .step-card { background: var(--surface); padding: 32px 28px; position: relative; transition: background 0.3s; }
-  .step-card:hover { background: #131720; }
-  .step-num { font-family: var(--font-display); font-size: 4rem; color: rgba(0,242,254,0.08); line-height: 1; position: absolute; top: 16px; right: 20px; }
-  .step-icon { font-size: 1.8rem; margin-bottom: 16px; }
-  .step-title { font-weight: 600; font-size: 1rem; margin-bottom: 8px; color: #fff; }
-  .step-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
-  .divider { width: 100%; height: 1px; background: var(--border); position: relative; z-index: 1; }
+/* ── Sections ── */
+.section { padding:72px 24px; max-width:960px; margin:0 auto; position:relative; z-index:1; }
+.section-label { font-size:.7rem; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--cyan); margin-bottom:12px; }
+.section-title { font-family:var(--font-d); font-size:clamp(2.2rem,6vw,3.8rem); line-height:1; margin-bottom:14px; }
+.section-body { color:var(--muted); font-size:.95rem; font-weight:300; max-width:500px; margin-bottom:44px; }
 
-  /* ── Analyzer section ── */
-  #analyzer { padding: 80px 24px 100px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
-  .tool-header { text-align: center; margin-bottom: 40px; }
-  .upload-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+/* ── Steps ── */
+.steps-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:2px; background:var(--border); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+.step-card { background:var(--surface); padding:28px 24px; position:relative; transition:background .3s; }
+.step-card:hover { background:var(--surface2); }
+.step-num { font-family:var(--font-d); font-size:3.5rem; color:rgba(0,242,254,.07); line-height:1; position:absolute; top:14px; right:18px; }
+.step-icon { font-size:1.7rem; margin-bottom:14px; }
+.step-title { font-weight:600; font-size:.95rem; margin-bottom:6px; color:#fff; }
+.step-desc { font-size:.82rem; color:var(--muted); line-height:1.6; }
 
-  /* Upload zone */
-  .upload-zone { border: 2px dashed rgba(0,242,254,0.2); border-radius: 14px; margin: 24px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.25s ease; background: rgba(0,242,254,0.01); }
-  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--cyan); background: rgba(0,242,254,0.04); }
-  .uz-icon { width: 56px; height: 56px; margin: 0 auto 18px; background: rgba(0,242,254,0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-  .uz-title { font-weight: 600; font-size: 1.05rem; color: #fff; margin-bottom: 6px; }
-  .uz-sub { font-size: 0.8rem; color: var(--muted); }
-  .file-preview { display: none; align-items: center; gap: 12px; background: rgba(0,242,254,0.05); border: 1px solid rgba(0,242,254,0.15); border-radius: 10px; padding: 12px 16px; margin: 0 24px 20px; font-size: 0.85rem; }
-  .file-preview .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-  .btn-analyze { width: calc(100% - 48px); margin: 0 24px 24px; background: var(--cyan); color: #000; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; padding: 16px; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: none; }
-  .btn-analyze:hover:not(:disabled) { background: #2af8ff; box-shadow: 0 0 32px rgba(0,242,254,0.3); }
-  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+/* ── Thresholds section ── */
+.thresholds-intro { color:var(--muted); font-size:.9rem; line-height:1.7; max-width:680px; margin-bottom:36px; }
+.threshold-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+.t-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+.t-card-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+.t-icon { font-size:1.4rem; }
+.t-title { font-weight:600; font-size:.95rem; color:#fff; }
+.t-subtitle { font-size:.73rem; color:var(--muted); margin-top:2px; }
+.t-rows { padding:0; }
+.t-row { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,.04); }
+.t-row:last-child { border-bottom:none; }
+.t-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.t-dot.good   { background:var(--green); box-shadow:0 0 6px var(--green); }
+.t-dot.ok     { background:var(--yellow); box-shadow:0 0 6px var(--yellow); }
+.t-dot.poor   { background:var(--red); box-shadow:0 0 6px var(--red); }
+.t-range { font-size:.82rem; color:var(--text); font-weight:500; }
+.t-label-text { font-size:.75rem; color:var(--muted); text-align:right; }
+.legend { display:flex; gap:20px; flex-wrap:wrap; margin-top:24px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--muted); }
+.legend-dot { width:10px; height:10px; border-radius:50%; }
 
-  /* Upload progress bar */
-  .upload-progress { display: none; flex-direction: column; gap: 10px; padding: 0 24px 24px; }
-  .progress-track { background: rgba(255,255,255,0.05); border-radius: 999px; height: 6px; overflow: hidden; }
-  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), #4facfe); border-radius: 999px; transition: width 0.3s ease; }
-  .progress-label { font-size: 0.78rem; color: var(--muted); text-align: center; }
+/* ── Analyzer ── */
+#analyzer { padding:72px 24px 100px; max-width:680px; margin:0 auto; position:relative; z-index:1; }
+.tool-header { text-align:center; margin-bottom:36px; }
+.upload-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
 
-  /* Processing panel */
-  .processing-panel { display: none; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; gap: 16px; }
-  .radar-ring { position: relative; width: 80px; height: 80px; }
-  .radar-ring::before, .radar-ring::after { content: ''; position: absolute; border-radius: 50%; border: 2px solid var(--cyan); animation: radarPulse 1.8s ease-out infinite; }
-  .radar-ring::before { inset: 0; }
-  .radar-ring::after { inset: 12px; animation-delay: 0.6s; opacity: 0.5; }
-  .radar-dot { position: absolute; inset: 32px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 16px var(--cyan); }
-  @keyframes radarPulse { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
-  .processing-label { font-family: var(--font-display); font-size: 1.6rem; color: var(--cyan); letter-spacing: 2px; }
-  .processing-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 1px; }
-  /* Animated processing dots */
-  .processing-sub::after { content: ''; animation: dots 1.8s steps(4, end) infinite; }
-  @keyframes dots { 0%,20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%,100% { content: '...'; } }
+/* Upload zone */
+.upload-zone { border:2px dashed rgba(0,242,254,.2); border-radius:14px; margin:22px; padding:44px 20px; text-align:center; cursor:pointer; transition:all .25s ease; background:rgba(0,242,254,.01); }
+.upload-zone:hover,.upload-zone.drag-over { border-color:var(--cyan); background:rgba(0,242,254,.04); }
+.uz-icon { width:54px; height:54px; margin:0 auto 16px; background:rgba(0,242,254,.08); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.4rem; }
+.uz-title { font-weight:600; font-size:1rem; color:#fff; margin-bottom:6px; }
+.uz-sub { font-size:.78rem; color:var(--muted); }
 
-  /* Error box */
-  .error-box { display: none; margin: 0 24px 20px; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #f87171; text-align: center; line-height: 1.5; }
+/* File preview */
+.file-preview { display:none; align-items:center; gap:10px; background:rgba(0,242,254,.05); border:1px solid rgba(0,242,254,.15); border-radius:10px; padding:11px 15px; margin:0 22px 18px; font-size:.83rem; }
+.file-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
 
-  /* Results */
-  .results-panel { display: none; flex-direction: column; }
-  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
-  .stats-grid .stat-cell { background: var(--surface); padding: 20px 16px; text-align: center; }
-  .stats-grid .stat-cell .val { font-family: var(--font-display); font-size: 2rem; color: var(--cyan); line-height: 1; }
-  .stats-grid .stat-cell .val.yellow { color: var(--yellow); }
-  .stats-grid .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
-  .video-wrap { background: #000; position: relative; }
-  .video-wrap video { width: 100%; height: auto; display: block; max-height: 60vh; object-fit: contain; background: #000; }
-  .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-  .btn-action { flex: 1; min-width: 120px; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-  .btn-action:hover { border-color: var(--cyan); color: var(--cyan); }
-  .btn-action.cyan { border-color: rgba(0,242,254,0.3); color: var(--cyan); }
-  .btn-action.cyan:hover { border-color: var(--cyan); background: rgba(0,242,254,0.06); }
+/* Progress bar */
+.upload-progress { display:none; flex-direction:column; gap:8px; padding:0 22px 20px; }
+.progress-track { background:rgba(255,255,255,.05); border-radius:999px; height:6px; overflow:hidden; }
+.progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),#4facfe); border-radius:999px; transition:width .3s ease; }
+.progress-label { font-size:.76rem; color:var(--muted); text-align:center; }
 
-  footer { border-top: 1px solid var(--border); padding: 40px 24px; text-align: center; color: var(--muted); font-size: 0.8rem; position: relative; z-index: 1; }
-  footer span { color: var(--cyan); }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  @media (max-width: 480px) { .steps-grid { grid-template-columns: 1fr; } .result-actions { flex-direction: column; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+/* Error box */
+.error-box { display:none; margin:0 22px 18px; background:rgba(220,38,38,.1); border:1px solid rgba(220,38,38,.3); border-radius:10px; padding:11px 15px; font-size:.8rem; color:#f87171; text-align:center; line-height:1.5; }
+
+/* Analyze button */
+.btn-analyze { width:calc(100% - 44px); margin:0 22px 22px; background:var(--cyan); color:#000; font-family:var(--font-b); font-weight:700; font-size:.92rem; letter-spacing:1px; text-transform:uppercase; padding:15px; border:none; border-radius:12px; cursor:pointer; transition:all .2s; display:none; }
+.btn-analyze:hover:not(:disabled) { background:#2af8ff; box-shadow:0 0 28px rgba(0,242,254,.3); }
+.btn-analyze:disabled { opacity:.45; cursor:not-allowed; }
+
+/* Processing */
+.processing-panel { display:none; flex-direction:column; align-items:center; padding:48px 24px; text-align:center; gap:16px; }
+.radar-ring { position:relative; width:76px; height:76px; }
+.radar-ring::before,.radar-ring::after { content:''; position:absolute; border-radius:50%; border:2px solid var(--cyan); animation:rp 1.8s ease-out infinite; }
+.radar-ring::before { inset:0; }
+.radar-ring::after { inset:11px; animation-delay:.6s; opacity:.5; }
+.radar-dot { position:absolute; inset:30px; background:var(--cyan); border-radius:50%; box-shadow:0 0 14px var(--cyan); }
+@keyframes rp { 0%{transform:scale(.8);opacity:1} 100%{transform:scale(1.6);opacity:0} }
+.processing-label { font-family:var(--font-d); font-size:1.5rem; color:var(--cyan); letter-spacing:2px; }
+.processing-sub { font-size:.78rem; color:var(--muted); letter-spacing:1px; }
+.processing-sub::after { content:''; animation:dots 1.8s steps(4,end) infinite; }
+@keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+
+/* Results */
+.results-panel { display:none; flex-direction:column; }
+.video-wrap { background:#000; position:relative; }
+.video-wrap video { width:100%; max-height:65vw; object-fit:contain; background:#000; display:block; }
+
+/* Stats grid */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border-top:1px solid var(--border); }
+.stat-cell { background:var(--surface); padding:18px 12px; text-align:center; position:relative; }
+.stat-cell .val { font-family:var(--font-d); font-size:1.8rem; color:var(--cyan); line-height:1; }
+.stat-cell .val.ye { color:var(--yellow); }
+.stat-cell .lbl { font-size:.62rem; color:var(--muted); letter-spacing:1.3px; text-transform:uppercase; margin-top:3px; }
+/* coloured band at bottom of each cell */
+.stat-cell .band { position:absolute; bottom:0; left:0; right:0; height:3px; border-radius:0; }
+.band-good  { background:var(--green); }
+.band-ok    { background:var(--yellow); }
+.band-poor  { background:var(--red); }
+.band-none  { background:transparent; }
+
+/* Feedback bar below stats */
+.feedback-bar { padding:16px 20px; background:var(--surface2); border-top:1px solid var(--border); }
+.feedback-bar h3 { font-size:.72rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px; }
+.feedback-list { display:flex; flex-direction:column; gap:7px; }
+.fb-item { display:flex; align-items:flex-start; gap:8px; font-size:.8rem; line-height:1.4; }
+.fb-dot { width:8px; height:8px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+
+/* Actions */
+.result-actions { display:flex; gap:10px; padding:18px 20px; border-top:1px solid var(--border); flex-wrap:wrap; }
+.btn-action { flex:1; min-width:110px; background:transparent; color:var(--text); font-family:var(--font-b); font-weight:500; font-size:.82rem; padding:11px 8px; border:1px solid var(--border); border-radius:10px; cursor:pointer; transition:all .2s; text-align:center; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+.btn-action:hover { border-color:var(--cyan); color:var(--cyan); }
+.btn-action.cy { border-color:rgba(0,242,254,.25); color:var(--cyan); }
+.btn-action.cy:hover { border-color:var(--cyan); background:rgba(0,242,254,.05); }
+
+footer { border-top:1px solid var(--border); padding:36px 24px; text-align:center; color:var(--muted); font-size:.78rem; position:relative; z-index:1; }
+footer span { color:var(--cyan); }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+@media (max-width:520px) {
+  .steps-grid,.threshold-grid { grid-template-columns:1fr; }
+  .result-actions { flex-direction:column; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .stat-cell .val { font-size:1.5rem; }
+  .hero-title { font-size:clamp(3rem,14vw,5rem); }
+}
 </style>
 </head>
 <body>
@@ -130,18 +182,19 @@
 <section class="hero">
   <div class="hero-badge">Beta — Free to try</div>
   <h1 class="hero-title">
-    <span class="line-white">PERFECT</span><br>
-    <span class="line-cyan">RELEASE</span><br>
-    <span class="line-yellow">AI</span>
+    <span class="wh">PERFECT</span><br>
+    <span class="cy">RELEASE</span><br>
+    <span class="ye">AI</span>
   </h1>
-  <p class="hero-sub">Upload your bowling video. Our AI engine maps every joint in real-time and breaks down your biomechanics — stride, arm angle, knee flex, release height.</p>
+  <p class="hero-sub">Upload your bowling video. AI maps every joint, scores your release, and tells you exactly what to fix.</p>
   <div class="hero-cta">
-    <a href="#analyzer" class="btn-primary">Analyze My Action →</a>
-    <a href="#how-it-works" class="btn-ghost">How it works</a>
+    <a href="#analyzer" class="btn-p">Analyze My Action →</a>
+    <a href="#thresholds" class="btn-g">What's a good score?</a>
   </div>
   <div class="scroll-hint"><div class="scroll-line"></div>scroll</div>
 </section>
 
+<!-- ── Stats strip ── -->
 <div class="stats-strip">
   <div class="stat-item"><div class="stat-number">6</div><div class="stat-label">Metrics tracked</div></div>
   <div class="stat-item"><div class="stat-number">33</div><div class="stat-label">Pose landmarks</div></div>
@@ -156,9 +209,109 @@
   <h2 class="section-title">Three steps.<br>Full breakdown.</h2>
   <p class="section-body">No app download. No signup. Upload your clip and get a fully annotated biomechanics analysis video back in minutes.</p>
   <div class="steps-grid">
-    <div class="step-card"><div class="step-num">01</div><div class="step-icon">🎥</div><div class="step-title">Upload Your Clip</div><div class="step-desc">Select any bowling video from your camera roll. Slow-motion footage gives the best results.</div></div>
-    <div class="step-card"><div class="step-num">02</div><div class="step-icon">🧠</div><div class="step-title">AI Processes It</div><div class="step-desc">MediaPipe maps 33 body landmarks across every frame. Knee angles, arm trajectory, stride count — all computed automatically.</div></div>
-    <div class="step-card"><div class="step-num">03</div><div class="step-icon">📊</div><div class="step-title">Review & Improve</div><div class="step-desc">Watch the annotated video with live overlays and check your summary stats to identify what to work on.</div></div>
+    <div class="step-card"><div class="step-num">01</div><div class="step-icon">🎥</div><div class="step-title">Upload Your Clip</div><div class="step-desc">Select any bowling video from your camera roll. Side-on, slow-motion footage gives the best results.</div></div>
+    <div class="step-card"><div class="step-num">02</div><div class="step-icon">🧠</div><div class="step-title">AI Processes It</div><div class="step-desc">MediaPipe tracks 33 body landmarks frame-by-frame — knee angles, arm trajectory, stride count, hip velocity.</div></div>
+    <div class="step-card"><div class="step-num">03</div><div class="step-icon">📊</div><div class="step-title">Review & Improve</div><div class="step-desc">Watch the annotated video, check your stats against professional thresholds, and know exactly what to fix.</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── Thresholds ── -->
+<section class="section" id="thresholds">
+  <div class="section-label">Reference Guide</div>
+  <h2 class="section-title">What does a<br>good release look like?</h2>
+  <p class="thresholds-intro">
+    These thresholds are drawn from biomechanics research on elite pace bowlers (90+ km/h) and coaching guidelines from Cricket Australia and the ECB. Use them to interpret your scores. <strong style="color:var(--text)">Green = elite range · Yellow = acceptable · Red = needs work.</strong>
+  </p>
+
+  <div class="threshold-grid">
+
+    <!-- Knee angles -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">🦵</div>
+        <div><div class="t-title">Knee Angle at Release</div><div class="t-subtitle">Front (braced) leg — side camera view</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><div class="t-dot good"></div><div class="t-range">165° – 180°</div><div class="t-label-text">Elite — fully braced</div></div>
+        <div class="t-row"><div class="t-dot ok"></div><div class="t-range">145° – 164°</div><div class="t-label-text">Acceptable — slight bend</div></div>
+        <div class="t-row"><div class="t-dot poor"></div><div class="t-range">&lt; 145°</div><div class="t-label-text">Poor — collapsing front leg</div></div>
+      </div>
+    </div>
+
+    <!-- Arm angle -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">💪</div>
+        <div><div class="t-title">Arm Angle (Tilt from Vertical)</div><div class="t-subtitle">Bowling arm shoulder → wrist</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><div class="t-dot good"></div><div class="t-range">0° – 20°</div><div class="t-label-text">Elite — near vertical</div></div>
+        <div class="t-row"><div class="t-dot ok"></div><div class="t-range">21° – 35°</div><div class="t-label-text">Acceptable — slight lean</div></div>
+        <div class="t-row"><div class="t-dot poor"></div><div class="t-range">&gt; 35°</div><div class="t-label-text">Poor — arm falling away</div></div>
+      </div>
+    </div>
+
+    <!-- Release height score -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">⬆️</div>
+        <div><div class="t-title">Release Height Score</div><div class="t-subtitle">Wrist height vs. ground (0–100 pts)</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><div class="t-dot good"></div><div class="t-range">55 – 100 pts</div><div class="t-label-text">Elite — high release point</div></div>
+        <div class="t-row"><div class="t-dot ok"></div><div class="t-range">35 – 54 pts</div><div class="t-label-text">Acceptable — mid-height</div></div>
+        <div class="t-row"><div class="t-dot poor"></div><div class="t-range">&lt; 35 pts</div><div class="t-label-text">Poor — low release, less bounce</div></div>
+      </div>
+    </div>
+
+    <!-- Strides -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">👟</div>
+        <div><div class="t-title">Stride Count (Run-up)</div><div class="t-subtitle">Detected ground contacts</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><div class="t-dot good"></div><div class="t-range">12 – 20 strides</div><div class="t-label-text">Elite fast bowler range</div></div>
+        <div class="t-row"><div class="t-dot ok"></div><div class="t-range">7 – 11 strides</div><div class="t-label-text">Medium pace / training clip</div></div>
+        <div class="t-row"><div class="t-dot poor"></div><div class="t-range">&lt; 7 strides</div><div class="t-label-text">Short — clip may be cropped</div></div>
+      </div>
+    </div>
+
+    <!-- Hip velocity -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">💨</div>
+        <div><div class="t-title">Hip Velocity (px/s)</div><div class="t-subtitle">Relative — varies with camera distance</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><div class="t-dot good"></div><div class="t-range">&gt; 800 px/s</div><div class="t-label-text">Strong hip drive</div></div>
+        <div class="t-row"><div class="t-dot ok"></div><div class="t-range">400 – 800 px/s</div><div class="t-label-text">Moderate momentum</div></div>
+        <div class="t-row"><div class="t-dot poor"></div><div class="t-range">&lt; 400 px/s</div><div class="t-label-text">Low — hip not driving through</div></div>
+      </div>
+    </div>
+
+    <!-- Tips card -->
+    <div class="t-card">
+      <div class="t-card-header">
+        <div class="t-icon">💡</div>
+        <div><div class="t-title">Pro Tips</div><div class="t-subtitle">Getting the most accurate analysis</div></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row" style="grid-template-columns:auto 1fr"><div class="t-icon" style="font-size:1rem">📐</div><div class="t-range" style="font-size:.78rem;color:var(--muted)">Film from the side (90° to crease) for best joint angles</div></div>
+        <div class="t-row" style="grid-template-columns:auto 1fr"><div class="t-icon" style="font-size:1rem">🎞️</div><div class="t-range" style="font-size:.78rem;color:var(--muted)">Use slow-motion (120fps+) if your phone supports it</div></div>
+        <div class="t-row" style="grid-template-columns:auto 1fr"><div class="t-icon" style="font-size:1rem">☀️</div><div class="t-range" style="font-size:.78rem;color:var(--muted)">Good lighting is critical — avoid backlight/shadows</div></div>
+        <div class="t-row" style="grid-template-columns:auto 1fr"><div class="t-icon" style="font-size:1rem">📏</div><div class="t-range" style="font-size:.78rem;color:var(--muted)">Full body must be in frame from head to ankle</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Elite / target range</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Acceptable — room to improve</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Needs attention — focus here first</div>
   </div>
 </section>
 
@@ -167,9 +320,9 @@
 <!-- ── Analyzer ── -->
 <section id="analyzer">
   <div class="tool-header">
-    <div class="section-label">Live tool</div>
+    <div class="section-label">Live Tool</div>
     <h2 class="section-title" style="text-align:center">Analyze Your Action</h2>
-    <p class="section-body" style="margin:12px auto 0;text-align:center">Processing takes 1–3 minutes depending on video length. Keep this tab open.</p>
+    <p class="section-body" style="margin:10px auto 0;text-align:center">Processing takes 1–3 min. Keep this tab open. Results are colour-coded against the thresholds above.</p>
   </div>
 
   <!-- Upload state -->
@@ -180,26 +333,20 @@
          ondragleave="handleDragLeave(event)"
          ondrop="handleDrop(event)">
       <div class="uz-icon">⚡</div>
-      <div class="uz-title">Drop your bowling video here</div>
-      <div class="uz-sub">or tap to browse · MP4, MOV, slow-mo supported</div>
-      <!-- FIX: capture="environment" removed — it forces camera on iOS, blocking library access -->
+      <div class="uz-title">Tap to select your bowling video</div>
+      <div class="uz-sub">or drag &amp; drop · MP4, MOV, slow-mo · max 500 MB</div>
       <input type="file" id="file-input" accept="video/*" style="display:none">
     </div>
-
     <div class="file-preview" id="file-preview">
       <span>📹</span>
-      <span class="file-name" id="file-name-label">video.mp4</span>
-      <span id="file-size-label" style="color:var(--muted);font-size:0.75rem;white-space:nowrap;"></span>
+      <span class="file-name" id="file-name-label"></span>
+      <span id="file-size-label" style="color:var(--muted);font-size:.73rem;white-space:nowrap;"></span>
     </div>
-
     <div class="error-box" id="error-box"></div>
-
-    <!-- Upload progress (shown during XHR upload) -->
     <div class="upload-progress" id="upload-progress">
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <div class="progress-label" id="progress-label">Uploading…</div>
     </div>
-
     <button class="btn-analyze" id="btn-analyze" onclick="startUpload()">⚡ Analyze Biomechanics</button>
   </div>
 
@@ -215,21 +362,32 @@
   <!-- Results state -->
   <div class="upload-card" id="results-panel" style="display:none;">
     <div class="results-panel" style="display:flex;">
-      <div class="video-wrap">
-        <video id="output-player" controls muted playsinline preload="auto"></video>
+
+      <!-- Video player -->
+      <div class="video-wrap" id="video-wrap">
+        <video id="output-player" controls muted playsinline preload="metadata"></video>
       </div>
+
+      <!-- Stats grid with colour bands -->
       <div class="stats-grid">
-        <div class="stat-cell"><div class="val"   id="st-strides">—</div><div class="lbl">Strides</div></div>
-        <div class="stat-cell"><div class="val"   id="st-lknee">—</div><div class="lbl">Avg L Knee</div></div>
-        <div class="stat-cell"><div class="val"   id="st-rknee">—</div><div class="lbl">Avg R Knee</div></div>
-        <div class="stat-cell"><div class="val yellow" id="st-arm">—</div><div class="lbl">Arm Angle</div></div>
-        <div class="stat-cell"><div class="val yellow" id="st-rel">—</div><div class="lbl">Release Pts</div></div>
-        <div class="stat-cell"><div class="val"   id="st-vel">—</div><div class="lbl">Velocity px/s</div></div>
+        <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div><div class="band" id="band-strides"></div></div>
+        <div class="stat-cell"><div class="val" id="st-lknee">—</div><div class="lbl">Avg L Knee</div><div class="band" id="band-lknee"></div></div>
+        <div class="stat-cell"><div class="val" id="st-rknee">—</div><div class="lbl">Avg R Knee</div><div class="band" id="band-rknee"></div></div>
+        <div class="stat-cell"><div class="val ye" id="st-arm">—</div><div class="lbl">Arm Angle</div><div class="band" id="band-arm"></div></div>
+        <div class="stat-cell"><div class="val ye" id="st-rel">—</div><div class="lbl">Release Pts</div><div class="band" id="band-rel"></div></div>
+        <div class="stat-cell"><div class="val" id="st-vel">—</div><div class="lbl">Velocity px/s</div><div class="band" id="band-vel"></div></div>
       </div>
+
+      <!-- AI Feedback -->
+      <div class="feedback-bar">
+        <h3>📋 Coaching Feedback</h3>
+        <div class="feedback-list" id="feedback-list"></div>
+      </div>
+
       <div class="result-actions">
         <button class="btn-action" onclick="resetTool()">↩ Analyze Another</button>
-        <a id="download-link" class="btn-action cyan" download="bowling_analysis.mp4">⬇ Download</a>
-        <button class="btn-action cyan" onclick="document.getElementById('output-player').requestFullscreen?.()">⛶ Fullscreen</button>
+        <a id="download-link" class="btn-action cy" download="bowling_analysis.mp4">⬇ Download</a>
+        <button class="btn-action cy" onclick="tryFullscreen()">⛶ Fullscreen</button>
       </div>
     </div>
   </div>
@@ -237,224 +395,266 @@
 
 <footer>
   <p>Perfect Release AI · <span>Beta</span> · Built for cricket &amp; bowling athletes</p>
-  <p style="margin-top:8px;font-size:0.72rem;">AI analysis is a training aid, not a substitute for professional coaching.</p>
+  <p style="margin-top:8px;font-size:.7rem;">AI analysis is a training aid, not a substitute for professional coaching.</p>
 </footer>
 
 <script>
-  // ── FIX: Use relative URLs so this works on any domain/Render deployment
-  //         without hardcoding a backend URL that breaks when you rename the service.
-  const API = '';   // empty = same origin
+const API = ''; // relative — works on any domain
+let selectedFile = null, pollTimer = null, pollFailures = 0;
+const MAX_FAIL = 5;
 
-  let selectedFile = null;
-  let pollTimer    = null;
-  let pollFailures = 0;           // FIX: count transient failures before giving up
-  const MAX_POLL_FAILURES = 5;   //      tolerate up to 5 consecutive network errors
+// ── Thresholds ──────────────────────────────────────────────────────────────
+const THRESHOLDS = {
+  strides:           { good:[12,999],  ok:[7,11],   poor:[0,6]   },
+  avg_l_knee:        { good:[165,180], ok:[145,164], poor:[0,144] },
+  avg_r_knee:        { good:[165,180], ok:[145,164], poor:[0,144] },
+  avg_arm_angle:     { good:[0,20],    ok:[21,35],   poor:[36,999]},
+  avg_release_score: { good:[55,999],  ok:[35,54],   poor:[0,34]  },
+  avg_velocity:      { good:[800,999999], ok:[400,799], poor:[0,399] },
+};
 
-  // ── File selection ──────────────────────────────────────────────────────────
-  document.getElementById('file-input').addEventListener('change', function () {
-    if (this.files.length) setFile(this.files[0]);
+function getRating(key, val) {
+  const t = THRESHOLDS[key];
+  if (!t || val === 0) return 'none';
+  if (val >= t.good[0] && val <= t.good[1]) return 'good';
+  if (val >= t.ok[0]   && val <= t.ok[1])   return 'ok';
+  return 'poor';
+}
+
+const FEEDBACK = {
+  avg_l_knee: {
+    good: { dot:'good', text:'Left knee brace: excellent — front leg is straight and locked at release.' },
+    ok:   { dot:'ok',   text:'Left knee brace: slight bend detected. Work on driving the front leg straighter through the crease.' },
+    poor: { dot:'poor', text:'Left knee brace: front leg is collapsing significantly. This loses pace and stresses the lower back — prioritise this first.' },
+  },
+  avg_r_knee: {
+    good: { dot:'good', text:'Right knee: good position through the delivery stride.' },
+    ok:   { dot:'ok',   text:'Right knee: moderate bend — ensure your back-foot lands correctly before the front-foot strike.' },
+    poor: { dot:'poor', text:'Right knee: excessive bend. Check back-foot placement and consider reducing run-up speed until technique is solid.' },
+  },
+  avg_arm_angle: {
+    good: { dot:'good', text:'Arm angle: near-vertical — excellent. High arm promotes bounce and reduces injury risk.' },
+    ok:   { dot:'ok',   text:'Arm angle: slight side-on tilt. Focus on reaching higher at the point of release.' },
+    poor: { dot:'poor', text:'Arm angle: arm falling away. This reduces bounce and accuracy — work on a higher, more vertical follow-through.' },
+  },
+  avg_release_score: {
+    good: { dot:'good', text:'Release height: elite — ball is being released from maximum height, maximising bounce.' },
+    ok:   { dot:'ok',   text:'Release height: mid-range. Try extending your arm higher and delaying release slightly.' },
+    poor: { dot:'poor', text:'Release height: low release point detected. Ball released too early or arm dropped — work on reach and wrist position.' },
+  },
+  avg_velocity: {
+    good: { dot:'good', text:'Hip drive: strong lateral momentum through the crease.' },
+    ok:   { dot:'ok',   text:'Hip drive: moderate. Increase bound length and explosive front-foot plant to improve.' },
+    poor: { dot:'poor', text:'Hip drive: low velocity. Focus on a more aggressive run-up and hip rotation through the crease.' },
+  },
+};
+
+// ── File selection ──────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', function () {
+  if (this.files.length) setFile(this.files[0]);
+});
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('file-name-label').textContent = f.name;
+  document.getElementById('file-size-label').textContent = fmtBytes(f.size);
+  document.getElementById('file-preview').style.display  = 'flex';
+  document.getElementById('btn-analyze').style.display   = 'block';
+  hideError();
+}
+function handleDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('video/')) setFile(f);
+}
+
+// ── Upload ──────────────────────────────────────────────────────────────────
+function startUpload() {
+  if (!selectedFile) return;
+  hideError();
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true;
+  document.getElementById('upload-progress').style.display = 'flex';
+  setProgress(0, 'Uploading…');
+
+  const fd = new FormData();
+  fd.append('video', selectedFile);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', API + '/upload');
+
+  xhr.upload.addEventListener('progress', e => {
+    if (e.lengthComputable) {
+      const p = Math.round(e.loaded / e.total * 100);
+      setProgress(p, `Uploading… ${p}%`);
+    }
   });
 
-  function setFile(file) {
-    selectedFile = file;
-    document.getElementById('file-name-label').textContent  = file.name;
-    document.getElementById('file-size-label').textContent  = formatBytes(file.size);
-    document.getElementById('file-preview').style.display   = 'flex';
-    document.getElementById('btn-analyze').style.display    = 'block';
-    hideError();
-  }
-
-  function handleDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
-  function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
-  function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('drop-zone').classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f && f.type.startsWith('video/')) setFile(f);
-  }
-
-  // ── Upload ──────────────────────────────────────────────────────────────────
-  function startUpload() {
-    if (!selectedFile) return;
-    hideError();
-
-    // Lock the button so double-taps don't double-submit
-    const btn = document.getElementById('btn-analyze');
-    btn.disabled = true;
-
-    // Show upload progress bar
-    document.getElementById('upload-progress').style.display = 'flex';
-    setProgress(0, 'Uploading…');
-
-    const fd  = new FormData();
-    fd.append('video', selectedFile);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${API}/upload`);
-
-    // Real upload progress — crucial on mobile where uploads are slow
-    xhr.upload.addEventListener('progress', e => {
-      if (e.lengthComputable) {
-        const pct = Math.round((e.loaded / e.total) * 100);
-        setProgress(pct, `Uploading… ${pct}%`);
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      document.getElementById('upload-progress').style.display = 'none';
-
-      if (xhr.status >= 200 && xhr.status < 300) {
-        let data;
-        try { data = JSON.parse(xhr.responseText); }
-        catch { showError('Server returned an invalid response. Please try again.'); btn.disabled = false; return; }
-
-        if (data.job_id) {
-          // Hide upload card, show processing panel
-          document.getElementById('upload-card').style.display     = 'none';
-          document.getElementById('processing-panel').style.display = 'block';
-          pollJobStatus(data.job_id);
-        } else {
-          showError(data.error || 'Failed to start processing. Please try again.');
-          btn.disabled = false;
-        }
-      } else {
-        showError(`Upload failed (HTTP ${xhr.status}). Please check your connection and try again.`);
-        btn.disabled = false;
-      }
-    });
-
-    xhr.addEventListener('error', () => {
-      document.getElementById('upload-progress').style.display = 'none';
-      showError('Network error during upload. Check your connection and try again.');
-      btn.disabled = false;
-    });
-
-    xhr.addEventListener('timeout', () => {
-      document.getElementById('upload-progress').style.display = 'none';
-      showError('Upload timed out. Try a shorter clip or a faster connection.');
-      btn.disabled = false;
-    });
-
-    xhr.timeout = 5 * 60 * 1000; // 5 min timeout for large files
-    xhr.send(fd);
-  }
-
-  // ── Polling ─────────────────────────────────────────────────────────────────
-  function pollJobStatus(jobId) {
-    pollFailures = 0;
-
-    // FIX: Keep polling even through transient network errors.
-    //      Only stop after MAX_POLL_FAILURES consecutive failures.
-    pollTimer = setInterval(async () => {
-      try {
-        const res  = await fetch(`${API}/status/${jobId}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        pollFailures = 0; // reset on success
-
-        if (data.status === 'completed') {
-          clearInterval(pollTimer);
-          showResults(data);
-
-        } else if (data.status === 'failed') {
-          clearInterval(pollTimer);
-          document.getElementById('processing-panel').style.display = 'none';
-          document.getElementById('upload-card').style.display      = 'block';
-          showError('Processing failed: ' + (data.error || 'Unknown error. Please try again.'));
-          document.getElementById('btn-analyze').disabled = false;
-        }
-        // status === 'processing' → do nothing, keep polling
-
-      } catch {
-        pollFailures++;
-        if (pollFailures >= MAX_POLL_FAILURES) {
-          clearInterval(pollTimer);
-          document.getElementById('processing-panel').style.display = 'none';
-          document.getElementById('upload-card').style.display      = 'block';
-          showError('Lost connection to server after several retries. Please refresh and try again.');
-          document.getElementById('btn-analyze').disabled = false;
-        }
-        // else: transient error — silently retry next tick
-      }
-    }, 3000); // poll every 3 s (3 s is gentler on Render free tier than 2 s)
-  }
-
-  // ── Show results ─────────────────────────────────────────────────────────────
-  function showResults(data) {
-    document.getElementById('processing-panel').style.display = 'none';
-
-    // Build absolute video URL
-    const videoUrl = data.video_url.startsWith('http')
-      ? data.video_url
-      : `${window.location.origin}${data.video_url}`;
-
-    const player = document.getElementById('output-player');
-
-    // FIX: Use 'canplay' event before calling .play() — avoids NotAllowedError on iOS Safari
-    player.addEventListener('canplay', () => {
-      player.play().catch(() => {}); // autoplay may be blocked; controls let user tap
-    }, { once: true });
-
-    player.src = videoUrl + '?t=' + Date.now(); // cache-bust
-    player.load();
-
-    // Set download link
-    document.getElementById('download-link').href = videoUrl;
-
-    // Populate stats
-    if (data.summary) {
-      const s = data.summary;
-      document.getElementById('st-strides').textContent = s.strides      ?? '—';
-      document.getElementById('st-lknee').textContent   = s.avg_l_knee   ? s.avg_l_knee   + '°' : '—';
-      document.getElementById('st-rknee').textContent   = s.avg_r_knee   ? s.avg_r_knee   + '°' : '—';
-      document.getElementById('st-arm').textContent     = s.avg_arm_angle? s.avg_arm_angle + '°' : '—';
-      document.getElementById('st-rel').textContent     = s.avg_release_score ?? '—';
-      document.getElementById('st-vel').textContent     = s.avg_velocity  ?? '—';
-    }
-
-    document.getElementById('results-panel').style.display = 'block';
-    document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  // ── Reset ────────────────────────────────────────────────────────────────────
-  function resetTool() {
-    clearInterval(pollTimer);
-    selectedFile = null;
-    pollFailures = 0;
-
-    document.getElementById('file-input').value    = '';
-    document.getElementById('file-preview').style.display  = 'none';
-    document.getElementById('btn-analyze').style.display   = 'none';
-    document.getElementById('btn-analyze').disabled        = false;
+  xhr.addEventListener('load', () => {
     document.getElementById('upload-progress').style.display = 'none';
-    document.getElementById('output-player').src           = '';
-    document.getElementById('upload-card').style.display      = 'block';
-    document.getElementById('processing-panel').style.display = 'none';
-    document.getElementById('results-panel').style.display    = 'none';
-    hideError();
-    document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
-  }
+    if (xhr.status >= 200 && xhr.status < 300) {
+      let data;
+      try { data = JSON.parse(xhr.responseText); } catch {
+        showError('Invalid response from server. Please try again.'); btn.disabled=false; return;
+      }
+      if (data.job_id) {
+        document.getElementById('upload-card').style.display      = 'none';
+        document.getElementById('processing-panel').style.display = 'block';
+        pollJobStatus(data.job_id);
+      } else {
+        showError(data.error || 'Failed to start processing.'); btn.disabled=false;
+      }
+    } else {
+      showError(`Upload failed (HTTP ${xhr.status}). Please try again.`); btn.disabled=false;
+    }
+  });
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  function setProgress(pct, label) {
-    document.getElementById('progress-fill').style.width      = pct + '%';
-    document.getElementById('progress-label').textContent     = label;
-  }
+  xhr.addEventListener('error',   () => { document.getElementById('upload-progress').style.display='none'; showError('Network error. Check connection and retry.'); btn.disabled=false; });
+  xhr.addEventListener('timeout', () => { document.getElementById('upload-progress').style.display='none'; showError('Upload timed out. Try a shorter clip.'); btn.disabled=false; });
+  xhr.timeout = 8 * 60 * 1000;
+  xhr.send(fd);
+}
 
-  function showError(msg) {
-    const box = document.getElementById('error-box');
-    box.textContent    = '⚠ ' + msg;
-    box.style.display  = 'block';
-  }
+// ── Polling ─────────────────────────────────────────────────────────────────
+function pollJobStatus(jobId) {
+  pollFailures = 0;
+  pollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`${API}/status/${jobId}`, { cache:'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      pollFailures = 0;
 
-  function hideError() {
-    document.getElementById('error-box').style.display = 'none';
-  }
+      if (data.status === 'completed') {
+        clearInterval(pollTimer);
+        showResults(data);
+      } else if (data.status === 'failed') {
+        clearInterval(pollTimer);
+        document.getElementById('processing-panel').style.display = 'none';
+        document.getElementById('upload-card').style.display      = 'block';
+        showError('Processing failed: ' + (data.error || 'Unknown error.'));
+        document.getElementById('btn-analyze').disabled = false;
+      }
+    } catch {
+      if (++pollFailures >= MAX_FAIL) {
+        clearInterval(pollTimer);
+        document.getElementById('processing-panel').style.display = 'none';
+        document.getElementById('upload-card').style.display      = 'block';
+        showError('Lost connection after several retries. Please refresh and try again.');
+        document.getElementById('btn-analyze').disabled = false;
+      }
+    }
+  }, 3000);
+}
 
-  function formatBytes(b) {
-    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-    return (b / (1024 * 1024)).toFixed(1) + ' MB';
-  }
+// ── Show results ─────────────────────────────────────────────────────────────
+function showResults(data) {
+  document.getElementById('processing-panel').style.display = 'none';
+
+  const s   = data.summary || {};
+  const url = data.video_url.startsWith('http')
+    ? data.video_url
+    : window.location.origin + data.video_url;
+
+  // ── Video — robust mobile loading ──
+  const player = document.getElementById('output-player');
+  player.src   = url + '?t=' + Date.now();
+
+  // On iOS, autoplay is silently blocked — use loadedmetadata + user controls
+  player.addEventListener('loadedmetadata', () => {
+    player.play().catch(() => {}); // fine if blocked; user has controls
+  }, { once: true });
+
+  player.addEventListener('error', () => {
+    // If native video fails, show a direct link fallback
+    const wrap = document.getElementById('video-wrap');
+    wrap.innerHTML = `
+      <div style="padding:32px 20px;text-align:center;color:var(--muted)">
+        <div style="font-size:2rem;margin-bottom:12px">⚠️</div>
+        <p style="margin-bottom:14px;font-size:.85rem">Your browser couldn't play the video inline.</p>
+        <a href="${url}" target="_blank" rel="noopener"
+           style="display:inline-block;padding:12px 24px;background:var(--cyan);color:#000;border-radius:999px;font-weight:700;text-decoration:none;font-size:.85rem">
+          ▶ Open Video in Browser
+        </a>
+      </div>`;
+  }, { once: true });
+
+  player.load();
+
+  // Download link
+  document.getElementById('download-link').href = url;
+
+  // ── Stats ──
+  const cells = {
+    strides:           { el:'st-strides', band:'band-strides', fmt: v => v },
+    avg_l_knee:        { el:'st-lknee',   band:'band-lknee',   fmt: v => v+'°' },
+    avg_r_knee:        { el:'st-rknee',   band:'band-rknee',   fmt: v => v+'°' },
+    avg_arm_angle:     { el:'st-arm',     band:'band-arm',     fmt: v => v+'°' },
+    avg_release_score: { el:'st-rel',     band:'band-rel',     fmt: v => v },
+    avg_velocity:      { el:'st-vel',     band:'band-vel',     fmt: v => v },
+  };
+  Object.entries(cells).forEach(([key, cfg]) => {
+    const val    = s[key] ?? 0;
+    const rating = getRating(key, val);
+    document.getElementById(cfg.el).textContent = val ? cfg.fmt(val) : '—';
+    const band = document.getElementById(cfg.band);
+    band.className = 'band band-' + rating;
+  });
+
+  // ── Coaching feedback ──
+  const fl = document.getElementById('feedback-list');
+  fl.innerHTML = '';
+  const keys = ['avg_l_knee','avg_r_knee','avg_arm_angle','avg_release_score','avg_velocity'];
+  keys.forEach(k => {
+    const val    = s[k] ?? 0;
+    const rating = getRating(k, val);
+    if (rating === 'none' || !FEEDBACK[k]) return;
+    const fb = FEEDBACK[k][rating];
+    fl.innerHTML += `<div class="fb-item"><div class="fb-dot" style="background:var(--${fb.dot==='good'?'green':fb.dot==='ok'?'yellow':'red'})"></div><span>${fb.text}</span></div>`;
+  });
+  if (!fl.innerHTML) fl.innerHTML = '<div style="font-size:.8rem;color:var(--muted)">No pose data detected — ensure your full body is visible in the video.</div>';
+
+  document.getElementById('results-panel').style.display = 'block';
+  document.getElementById('results-panel').scrollIntoView({ behavior:'smooth' });
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetTool() {
+  clearInterval(pollTimer);
+  selectedFile = null; pollFailures = 0;
+  document.getElementById('file-input').value = '';
+  ['file-preview','btn-analyze','upload-progress'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = id === 'btn-analyze' ? 'none' : 'none';
+  });
+  document.getElementById('file-preview').style.display  = 'none';
+  document.getElementById('btn-analyze').style.display   = 'none';
+  document.getElementById('btn-analyze').disabled        = false;
+  document.getElementById('upload-progress').style.display = 'none';
+  document.getElementById('output-player').src = '';
+  document.getElementById('upload-card').style.display      = 'block';
+  document.getElementById('processing-panel').style.display = 'none';
+  document.getElementById('results-panel').style.display    = 'none';
+  hideError();
+  document.getElementById('analyzer').scrollIntoView({ behavior:'smooth' });
+}
+
+function tryFullscreen() {
+  const v = document.getElementById('output-player');
+  (v.requestFullscreen || v.webkitRequestFullscreen || v.webkitEnterFullscreen || (() => {})).call(v);
+}
+
+function setProgress(p, label) {
+  document.getElementById('progress-fill').style.width  = p + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.textContent   = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+function hideError() { document.getElementById('error-box').style.display = 'none'; }
+function fmtBytes(b) { return b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB'; }
 </script>
 </body>
 </html>
