@@ -2,12 +2,13 @@ import cv2
 import mediapipe as mp
 import os
 import numpy as np
+import time
 from flask import Flask, request, render_template, send_from_directory, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Allow cross-origin requests globally (crucial for phone/WordPress browser uploads)
+# Allow cross-origin requests globally (crucial for WordPress and phone access)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure upload and output folders
@@ -34,7 +35,7 @@ def calculate_joint_angle(p1, p2, p3):
 
 
 def process_bowling_video(video_path, output_path):
-    """Core biomechanics analysis engine optimized for Linux Cloud Servers."""
+    """Core biomechanics analysis engine optimized for Linux Cloud Servers and Browser streaming."""
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
         static_image_mode=False,
@@ -45,28 +46,28 @@ def process_bowling_video(video_path, output_path):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return False, {}  # Safely returns dual parameters to prevent unpack crashes
+        return False, {}  # Prevent unpacking crash fallback
 
     orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     time_per_frame = 1.0 / fps if fps > 0 else 0.0167
 
-    # FIX: Using 'mp4v' for native compatibility on Linux systems
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    # FIX: Use 'avc1' (H.264) codec container so the resulting video can be natively streamed by web browsers
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
     out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
-    # ULTIMATE CLOUD FALLBACK: If standard mp4v drops, engage cross-platform XVID
+    # ULTIMATE FALLBACK: If avc1 has compiler limits on certain server boxes, drop to mp4v container
     if not out.isOpened():
-        print("⚠️ Linux native mp4v container failed. Engaging high-compatibility XVID fallback...")
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        print("⚠️ H.264 container failed. Falling back to native mp4v layer...")
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
     prev_hip_x = None
     stride_count = 0
     foot_was_down = False
 
-    # Data accumulators for the dashboard metric averages
+    # Data accumulators for the dashboard metrics
     l_knee_angles = []
     r_knee_angles = []
     arm_angles = []
@@ -139,8 +140,6 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"HAND REL: {int(release_height_score)} pts",
                             (wrist_pixel_x + 25, wrist_pixel_y - 45),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 254), 3, cv2.LINE_AA)
-                
-                # FIX: Swapped out broken syntax text for a clean neon-yellow color tuple
                 cv2.putText(frame, f"ARM ANGLE: {int(arm_angle_deg)} deg",
                             (wrist_pixel_x + 25, wrist_pixel_y - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 255), 3, cv2.LINE_AA)
@@ -157,7 +156,7 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"Strides Counted: {stride_count}", (40, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3, cv2.LINE_AA)
 
-            # Horizontal Running Velocity
+            # Horizontal Run-up Velocity
             if l_hip.visibility > 0.5:
                 current_hip_x = l_hip.x * w
                 if prev_hip_x is not None:
@@ -173,7 +172,7 @@ def process_bowling_video(video_path, output_path):
     cap.release()
     out.release()
 
-    # Formulate final dataset averages to stream back to your frontend grid panels
+    # Formulate final data dictionary to stream back to dashboard panels
     summary = {
         "strides": stride_count,
         "avg_l_knee": int(np.mean(l_knee_angles)) if l_knee_angles else 0,
@@ -194,11 +193,11 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_video():
     if 'video' not in request.files:
-        return jsonify({'error': 'No video asset submitted'}), 400
+        return jsonify({'error': 'No video file uploaded'}), 400
 
     file = request.files['video']
     if file.filename == '':
-        return jsonify({'error': 'Empty target file chosen'}), 400
+        return jsonify({'error': 'No file selected'}), 400
 
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input_raw.mp4')
     file.save(input_path)
@@ -206,17 +205,20 @@ def upload_video():
     output_filename = 'analyzed_output.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-    print("⏳ Cloud Engine: Commencing Biomechanical Framework Mapping...")
+    print("⏳ Processing started...")
     success, summary = process_bowling_video(input_path, output_path)
-    print("✅ Cloud Engine: Video Processing Finalized Successfully!")
+    print("✅ Processing complete!")
 
     if success:
+        # FIX: Appending an epoch timestamp query (?t=...) forces the browser to discard cached 
+        # copies of older runs and cleanly stream the brand new processed video file every time.
+        epoch_time = int(time.time())
         return jsonify({
-            'video_url': f'/static/{output_filename}',
+            'video_url': f'/static/{output_filename}?t={epoch_time}',
             'summary': summary
         })
     else:
-        return jsonify({'error': 'The data compiler dropped during execution'}), 500
+        return jsonify({'error': 'Video processing failed'}), 500
 
 
 @app.route('/static/<filename>')
@@ -225,6 +227,6 @@ def serve_video(filename):
 
 
 if __name__ == '__main__':
-    # Dynamically read the runtime port assigned by Zeabur's routing network
+    # Support dynamic cloud routing via environment ports
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
