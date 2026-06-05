@@ -115,11 +115,34 @@ def process_bowling_video(video_path, output_path):
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(rgb_frame)
 
+        # ── SCALE font size to video resolution so text is never huge ──────────
+        # Base scale designed for 1080p; shrinks proportionally on smaller videos
+        scale      = min(w, h) / 1080 * 0.55   # e.g. 720p → 0.37, 1080p → 0.55
+        scale      = max(scale, 0.28)            # floor so tiny videos still readable
+        thickness  = max(1, int(scale * 2.2))    # 1px on small, 2px on large
+        pad        = int(scale * 14)             # background pill padding
+
+        def put_label(img, text, x, y, color, bg_alpha=0.55):
+            """Draw text with a semi-transparent dark pill behind it."""
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            (tw, th), bl = cv2.getTextSize(text, font, scale, thickness)
+            # clamp to frame
+            x = max(pad, min(x, w - tw - pad * 2))
+            y = max(th + pad, min(y, h - pad))
+            # dark background rectangle
+            overlay = img.copy()
+            cv2.rectangle(overlay,
+                          (x - pad, y - th - pad),
+                          (x + tw + pad, y + bl + pad // 2),
+                          (0, 0, 0), -1)
+            cv2.addWeighted(overlay, bg_alpha, img, 1 - bg_alpha, 0, img)
+            cv2.putText(img, text, (x, y), font, scale, color, thickness, cv2.LINE_AA)
+
         if results.pose_landmarks:
             mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=3, circle_radius=3),
-                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2)
+                mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=2, circle_radius=2),
+                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1)
             )
 
             landmarks = results.pose_landmarks.landmark
@@ -139,18 +162,16 @@ def process_bowling_video(video_path, output_path):
                 l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
                 l_knee_angles.append(l_angle)
                 l_color = (0, 255, 0) if l_angle > 165 else (200, 200, 200)
-                cv2.putText(frame, f"L Knee: {int(l_angle)} deg",
-                            (int(l_knee.x * w) + 20, int(l_knee.y * h)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, l_color, 3, cv2.LINE_AA)
+                put_label(frame, f"L {int(l_angle)}\u00b0",
+                          int(l_knee.x * w) + 12, int(l_knee.y * h), l_color)
 
             # Right Knee
             if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
                 r_angle = calculate_joint_angle(r_hip, r_knee, r_ankle)
                 r_knee_angles.append(r_angle)
                 r_color = (0, 255, 0) if r_angle > 165 else (200, 200, 200)
-                cv2.putText(frame, f"R Knee: {int(r_angle)} deg",
-                            (int(r_knee.x * w) + 20, int(r_knee.y * h) - 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, r_color, 3, cv2.LINE_AA)
+                put_label(frame, f"R {int(r_angle)}\u00b0",
+                          int(r_knee.x * w) + 12, int(r_knee.y * h) - 20, r_color)
 
             # Arm Angle & Release Height
             if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5 and l_shoulder.visibility > 0.5:
@@ -169,14 +190,13 @@ def process_bowling_video(video_path, output_path):
                 arm_angle_deg = np.degrees(np.arctan2(abs(dx), dy))
                 arm_angles.append(arm_angle_deg)
 
-                cv2.putText(frame, f"HAND REL: {int(release_height_score)} pts",
-                            (wrist_pixel_x + 25, wrist_pixel_y - 45),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 254), 3, cv2.LINE_AA)
-                cv2.putText(frame, f"ARM ANGLE: {int(arm_angle_deg)} deg",
-                            (wrist_pixel_x + 25, wrist_pixel_y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 242, 0), 3, cv2.LINE_AA)
+                put_label(frame, f"REL {int(release_height_score)}",
+                          wrist_pixel_x + 14, wrist_pixel_y - 30, (0, 242, 254))
+                put_label(frame, f"ARM {int(arm_angle_deg)}\u00b0",
+                          wrist_pixel_x + 14, wrist_pixel_y - 6, (255, 220, 0))
 
-            # Strides
+            # Strides + Velocity — fixed top-left HUD panel
+            line_h = int(scale * 38)
             if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
                 lowest_ankle_y = max(l_ankle.y, r_ankle.y)
                 if lowest_ankle_y > 0.82:
@@ -185,18 +205,17 @@ def process_bowling_video(video_path, output_path):
                         foot_was_down = True
                 else:
                     foot_was_down = False
-                cv2.putText(frame, f"Strides Counted: {stride_count}", (40, 50),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3, cv2.LINE_AA)
+                put_label(frame, f"Strides: {stride_count}",
+                          16, line_h, (255, 255, 255))
 
-            # Velocity
             if l_hip.visibility > 0.5:
                 current_hip_x = l_hip.x * w
                 if prev_hip_x is not None:
                     pixel_dist = abs(current_hip_x - prev_hip_x)
                     vel_px_sec = pixel_dist / time_per_frame
                     velocities.append(vel_px_sec)
-                    cv2.putText(frame, f"Velocity: {int(vel_px_sec)} px/sec", (40, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 242, 254), 3, cv2.LINE_AA)
+                    put_label(frame, f"Vel: {int(vel_px_sec)} px/s",
+                              16, line_h * 2 + 4, (0, 242, 254))
                 prev_hip_x = current_hip_x
 
         out.write(frame)
