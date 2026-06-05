@@ -85,10 +85,7 @@
   .stats-grid .stat-cell .val.yellow { color: var(--yellow); }
   .stats-grid .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
   .video-wrap { background: #000; position: relative; }
-  
-  /* MOBILE COMPATIBILITY: Force absolute inline controls to appear over canvas architectures */
   .video-wrap video { width: 100%; height: auto; display: block; object-fit: contain; background: #000; }
-  
   .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); }
   .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
   .btn-again:hover { border-color: var(--cyan); color: var(--cyan); }
@@ -167,13 +164,15 @@
   <div class="upload-card" id="results-panel" style="display:none;">
     <div class="results-panel" style="display:flex;">
       <div class="video-wrap">
-        <video
-    id="output-player"
-    controls
-    playsinline
-    preload="metadata"
-    style="width:100%;height:auto;background:black;">
-</video>
+        <video 
+            id="output-player" 
+            controls 
+            playsinline 
+            webkit-playsinline
+            preload="auto" 
+            style="width:100%; height:auto; background:black;">
+            Your browser does not support the video tag.
+        </video>
       </div>
       <div class="stats-grid">
         <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
@@ -239,10 +238,11 @@
       if (data.video_url) {
         const player = document.getElementById('output-player');
         
-        // URL FORMAT ALIGNMENT FIX: Prevent double backend endpoints prefixes from creating broken URLs
+        // Prevent double endpoint prefix issues from breaking URLs
         const cleanVideoUrl = data.video_url.startsWith('http') ? data.video_url : `${BACKEND_URL}${data.video_url}`;
         
-        player.src = cleanVideoUrl;
+        // Add a timestamp cache buster query parameter to force video re-render
+        player.src = `${cleanVideoUrl}?v=${Date.now()}`;
         player.load();
         
         if (data.summary) {
