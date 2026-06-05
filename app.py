@@ -54,8 +54,19 @@ def process_bowling_video(video_path, output_path):
     time_per_frame = 1.0 / fps if fps > 0 else 0.0167
 
     # WEB-COMPATIBLE FIX: Force 'avc1' (H.264) container encoding so HTML5 web browsers can play it natively
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
+   fps = fps if fps > 0 else 25.0
+
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter(
+    output_path,
+    fourcc,
+    fps,
+    (orig_w, orig_h)
+)
+
+if not out.isOpened():
+    print("ERROR: Could not create output video")
+    return False, {}
 
     # HARDWARE FALLBACK: If system packages lack avc1 bindings, drop down to standard mp4v safely
     if not out.isOpened():
@@ -224,19 +235,15 @@ def upload_video():
 @app.route('/static/<filename>')
 def serve_video(filename):
     video_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
-    
-    if not os.path.exists(video_path):
-        return jsonify({'error': 'Video asset not found'}), 404
 
-    response = make_response(send_file(video_path, mimetype='video/mp4'))
-    
-    # Force absolute media attributes onto the server response headers
-    response.headers['Content-Type'] = 'video/mp4'
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    
-    return response
+    if not os.path.exists(video_path):
+        return jsonify({'error': 'Video not found'}), 404
+
+    return send_file(
+        video_path,
+        mimetype='video/mp4',
+        conditional=True
+    )
 
 
 if __name__ == '__main__':
