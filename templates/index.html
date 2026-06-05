@@ -167,7 +167,13 @@
   <div class="upload-card" id="results-panel" style="display:none;">
     <div class="results-panel" style="display:flex;">
       <div class="video-wrap">
-        <video id="output-player" controls autoplay muted playsinline></video>
+        <video
+    id="output-player"
+    controls
+    playsinline
+    preload="metadata"
+    style="width:100%;height:auto;background:black;">
+</video>
       </div>
       <div class="stats-grid">
         <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
