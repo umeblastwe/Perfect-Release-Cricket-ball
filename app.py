@@ -1,17 +1,15 @@
 import cv2
 import mediapipe as mp
 import os
+import subprocess
 import numpy as np
 import time
-from flask import Flask, request, render_template, jsonify, send_file
+from flask import Flask, request, render_template, jsonify, send_file, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
-
-# Enable cross-origin resource sharing globally for phone testing
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Define explicit paths for uploads and static analytics assets
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 OUTPUT_FOLDER = os.path.join(os.getcwd(), 'static')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -19,11 +17,10 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB structural ceiling
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 
 
 def calculate_joint_angle(p1, p2, p3):
-    """Calculates the internal vector angle at a specific joint vertex (p2)."""
     a = np.array([p1.x, p1.y])
     b = np.array([p2.x, p2.y])
     c = np.array([p3.x, p3.y])
@@ -34,8 +31,39 @@ def calculate_joint_angle(p1, p2, p3):
     return np.degrees(np.arccos(cosine_angle))
 
 
+def reencode_for_web(input_path, output_path):
+    """
+    Re-encode with ffmpeg so the moov atom is at the front of the file
+    (faststart flag). This is what makes video seekable/playable in browsers.
+    Falls back silently if ffmpeg is not available.
+    """
+    try:
+        tmp_path = input_path.replace('.mp4', '_tmp.mp4')
+        os.rename(input_path, tmp_path)
+        result = subprocess.run([
+            'ffmpeg', '-y',
+            '-i', tmp_path,
+            '-c:v', 'libx264',   # H.264 video codec
+            '-preset', 'fast',
+            '-crf', '23',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',  # ← moov atom at front = instant browser play
+            output_path
+        ], capture_output=True, timeout=300)
+        os.remove(tmp_path)
+        if result.returncode == 0:
+            print("✅ ffmpeg re-encode successful")
+            return True
+        else:
+            print(f"⚠️ ffmpeg failed: {result.stderr.decode()}")
+            os.rename(tmp_path, input_path)
+            return False
+    except (FileNotFoundError, subprocess.TimeoutExpired, Exception) as e:
+        print(f"⚠️ ffmpeg not available or failed: {e}")
+        return False
+
+
 def process_bowling_video(video_path, output_path):
-    """Core computer vision biomechanics engine with cross-platform H.264 container fallbacks."""
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
         static_image_mode=False,
@@ -54,21 +82,18 @@ def process_bowling_video(video_path, output_path):
     fps = fps if fps > 0 else 25.0
     time_per_frame = 1.0 / fps
 
-    # WEB-COMPATIBLE FIX: Attempt native H.264 encoding first for absolute web compliance
-    try:
-        fourcc = cv2.VideoWriter_fourcc(*'avc1')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (orig_w, orig_h))
-    except Exception:
-        out = None
+    # Write to a temp file first, then ffmpeg re-encodes it for web
+    raw_output = output_path.replace('.mp4', '_raw.mp4')
 
-    # HARDWARE FALLBACK: Drop down safely to alternative browser-friendly mp4v container layer
-    if out is None or not out.isOpened():
-        print("⚠️ H.264 avc1 compilation failed/unsupported. Dropping to default mp4v container layer...")
+    # Try avc1 first, fall back to mp4v
+    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    out = cv2.VideoWriter(raw_output, fourcc, fps, (orig_w, orig_h))
+    if not out.isOpened():
+        print("⚠️ avc1 unavailable, falling back to mp4v")
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, fps, (orig_w, orig_h))
+        out = cv2.VideoWriter(raw_output, fourcc, fps, (orig_w, orig_h))
 
     if not out.isOpened():
-        print("ERROR: Could not create output video file writer system.")
         return False, {}
 
     prev_hip_x = None
@@ -98,18 +123,18 @@ def process_bowling_video(video_path, output_path):
             )
 
             landmarks = results.pose_landmarks.landmark
-            l_hip    = landmarks[mp_pose.PoseLandmark.LEFT_HIP]
-            l_knee   = landmarks[mp_pose.PoseLandmark.LEFT_KNEE]
-            l_ankle  = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE]
-            r_hip    = landmarks[mp_pose.PoseLandmark.RIGHT_HIP]
-            r_knee   = landmarks[mp_pose.PoseLandmark.RIGHT_KNEE]
-            r_ankle  = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE]
+            l_hip      = landmarks[mp_pose.PoseLandmark.LEFT_HIP]
+            l_knee     = landmarks[mp_pose.PoseLandmark.LEFT_KNEE]
+            l_ankle    = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE]
+            r_hip      = landmarks[mp_pose.PoseLandmark.RIGHT_HIP]
+            r_knee     = landmarks[mp_pose.PoseLandmark.RIGHT_KNEE]
+            r_ankle    = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE]
             l_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
             r_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-            l_wrist  = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
-            r_wrist  = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
+            l_wrist    = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
+            r_wrist    = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
 
-            # Left Knee Angle tracking
+            # Left Knee
             if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                 l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
                 l_knee_angles.append(l_angle)
@@ -118,7 +143,7 @@ def process_bowling_video(video_path, output_path):
                             (int(l_knee.x * w) + 20, int(l_knee.y * h)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, l_color, 3, cv2.LINE_AA)
 
-            # Right Knee Angle tracking
+            # Right Knee
             if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
                 r_angle = calculate_joint_angle(r_hip, r_knee, r_ankle)
                 r_knee_angles.append(r_angle)
@@ -127,7 +152,7 @@ def process_bowling_video(video_path, output_path):
                             (int(r_knee.x * w) + 20, int(r_knee.y * h) - 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, r_color, 3, cv2.LINE_AA)
 
-            # Arm Release Slant Angle & Elevation
+            # Arm Angle & Release Height
             if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5 and l_shoulder.visibility > 0.5:
                 highest_wrist = l_wrist if l_wrist.y < r_wrist.y else r_wrist
                 corresponding_shoulder = l_shoulder if highest_wrist == l_wrist else r_shoulder
@@ -149,9 +174,9 @@ def process_bowling_video(video_path, output_path):
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 254), 3, cv2.LINE_AA)
                 cv2.putText(frame, f"ARM ANGLE: {int(arm_angle_deg)} deg",
                             (wrist_pixel_x + 25, wrist_pixel_y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 255), 3, cv2.LINE_AA)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 242, 0), 3, cv2.LINE_AA)
 
-            # Stride Counter Logic
+            # Strides
             if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
                 lowest_ankle_y = max(l_ankle.y, r_ankle.y)
                 if lowest_ankle_y > 0.82:
@@ -163,7 +188,7 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"Strides Counted: {stride_count}", (40, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3, cv2.LINE_AA)
 
-            # Run-up/Delivery Frame Velocity
+            # Velocity
             if l_hip.visibility > 0.5:
                 current_hip_x = l_hip.x * w
                 if prev_hip_x is not None:
@@ -178,6 +203,16 @@ def process_bowling_video(video_path, output_path):
 
     cap.release()
     out.release()
+
+    # ── KEY FIX: Re-encode with ffmpeg for browser compatibility ──────────────
+    # ffmpeg adds -movflags +faststart which moves the moov atom to the front
+    # of the file — without this, browsers can't play the video until it's
+    # fully downloaded (causes the black player you saw).
+    reencoded = reencode_for_web(raw_output, output_path)
+    if not reencoded:
+        # ffmpeg unavailable — just rename the raw file and hope for the best
+        if os.path.exists(raw_output):
+            os.rename(raw_output, output_path)
 
     summary = {
         "strides": stride_count,
@@ -196,6 +231,11 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'ok'}), 200
+
+
 @app.route('/upload', methods=['POST'])
 def upload_video():
     if 'video' not in request.files:
@@ -210,12 +250,19 @@ def upload_video():
         os.remove(input_path)
     file.save(input_path)
 
-    # Generate a unique timestamp to break frontend CDN or browser asset caching
     epoch_time = int(time.time())
     output_filename = f'analyzed_{epoch_time}.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-    print(f"⏳ Processing dynamic tracking for {output_filename}...")
+    # Clean up old output files to save disk space on Render free tier
+    for f in os.listdir(app.config['OUTPUT_FOLDER']):
+        if f.startswith('analyzed_') and f != output_filename:
+            try:
+                os.remove(os.path.join(app.config['OUTPUT_FOLDER'], f))
+            except Exception:
+                pass
+
+    print(f"⏳ Processing {output_filename}...")
     success, summary = process_bowling_video(input_path, output_path)
     print("✅ Processing complete!")
 
@@ -230,15 +277,19 @@ def upload_video():
 
 @app.route('/static/<filename>')
 def serve_video(filename):
+    """
+    Serve with proper range-request support.
+    Range requests are required for browser <video> seek bars to work.
+    send_file with conditional=True handles this automatically.
+    """
     video_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
     if not os.path.exists(video_path):
-        return jsonify({'error': 'Video asset not found'}), 404
+        return jsonify({'error': 'File not found'}), 404
 
-    # Using conditional loop ranges allows direct scrubbing and partial downloads on mobile devices
     return send_file(
         video_path,
         mimetype='video/mp4',
-        conditional=True
+        conditional=True  # enables Accept-Ranges / byte-range requests
     )
 
 
