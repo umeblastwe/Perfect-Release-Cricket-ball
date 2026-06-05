@@ -1,5 +1,4 @@
 import cv2
-import mediapipe as mp
 import os
 import subprocess
 import numpy as np
@@ -20,14 +19,23 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 
-# Global safe pipeline pooling engines
-mp_pose = mp.solutions.pose
+# ─── SAFE DYNAMIC IMPORT SYSTEM (AttributeError Module Fix) ───
+try:
+    import mediapipe as mp
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+except AttributeError:
+    # Manual installation override if virtual environment breaks sub-modules
+    os.system("pip install --no-cache-dir mediapipe==0.10.14")
+    import mediapipe as mp
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+
 pose_engine = mp_pose.Pose(
     static_image_mode=False,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5
 )
-mp_drawing = mp.solutions.drawing_utils
 
 JOBS_STATUS = {}
 
@@ -54,7 +62,7 @@ def async_video_processing(job_id, input_path, output_path, output_filename, epo
         fps = fps if fps > 0 else 25.0
         time_per_frame = 1.0 / fps
 
-        # FIXED: Directly use forced universal mp4v container layer to bypass missing system encoders
+        # FIXED: Forced universal mp4v container layer to bypass missing system encoders on Render
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps, (orig_w, orig_h))
 
@@ -144,7 +152,6 @@ def async_video_processing(job_id, input_path, output_path, output_filename, epo
             out.write(frame)
 
         cap.release()
-        out.write(frame) if 'frame' in locals() else None
         out.release()
 
         summary = {
@@ -184,7 +191,7 @@ def upload_video():
     output_filename = f'analyzed_{epoch_time}.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-    # Temporary garbage management execution clear
+    # Garbage disk allocation handling clear
     for f in os.listdir(app.config['OUTPUT_FOLDER']):
         if f.startswith('analyzed_') and f != output_filename:
             try: os.remove(os.path.join(app.config['OUTPUT_FOLDER'], f))
@@ -192,7 +199,7 @@ def upload_video():
 
     JOBS_STATUS[job_id] = {"status": "processing"}
     
-    # Executing multi-threaded architecture worker isolation state
+    # Executing isolated worker thread pipeline
     threading.Thread(target=async_video_processing, args=(job_id, input_path, output_path, output_filename, epoch_time)).start()
     
     return jsonify({'job_id': job_id, 'status': 'processing'})
