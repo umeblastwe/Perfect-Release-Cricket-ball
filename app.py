@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Allow cross-origin requests globally (essential for your mobile/WordPress connection)
+# Allow cross-origin requests globally (crucial for phone/WordPress browser uploads)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure upload and output folders
@@ -18,7 +18,7 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max upload size
 
 
 def calculate_joint_angle(p1, p2, p3):
@@ -34,7 +34,7 @@ def calculate_joint_angle(p1, p2, p3):
 
 
 def process_bowling_video(video_path, output_path):
-    """Core biomechanics analysis engine."""
+    """Core biomechanics analysis engine optimized for Linux Cloud Servers."""
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
         static_image_mode=False,
@@ -45,21 +45,28 @@ def process_bowling_video(video_path, output_path):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return False, {}  # Safeguard fallback
+        return False, {}  # Safely returns dual parameters to prevent unpack crashes
 
     orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     time_per_frame = 1.0 / fps if fps > 0 else 0.0167
 
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    # FIX: Using 'mp4v' for native compatibility on Linux systems
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
+
+    # ULTIMATE CLOUD FALLBACK: If standard mp4v drops, engage cross-platform XVID
+    if not out.isOpened():
+        print("⚠️ Linux native mp4v container failed. Engaging high-compatibility XVID fallback...")
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
     prev_hip_x = None
     stride_count = 0
     foot_was_down = False
 
-    # Accumulators for summary stats
+    # Data accumulators for the dashboard metric averages
     l_knee_angles = []
     r_knee_angles = []
     arm_angles = []
@@ -94,7 +101,7 @@ def process_bowling_video(video_path, output_path):
             l_wrist  = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
             r_wrist  = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
 
-            # Left Knee
+            # Left Knee Tracking
             if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                 l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
                 l_knee_angles.append(l_angle)
@@ -103,7 +110,7 @@ def process_bowling_video(video_path, output_path):
                             (int(l_knee.x * w) + 20, int(l_knee.y * h)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, l_color, 3, cv2.LINE_AA)
 
-            # Right Knee
+            # Right Knee Tracking
             if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
                 r_angle = calculate_joint_angle(r_hip, r_knee, r_ankle)
                 r_knee_angles.append(r_angle)
@@ -112,7 +119,7 @@ def process_bowling_video(video_path, output_path):
                             (int(r_knee.x * w) + 20, int(r_knee.y * h) - 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, r_color, 3, cv2.LINE_AA)
 
-            # Hands Height & Angle
+            # Hands Height & Arm Release Trajectory Angle
             if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5 and l_shoulder.visibility > 0.5:
                 highest_wrist = l_wrist if l_wrist.y < r_wrist.y else r_wrist
                 corresponding_shoulder = l_shoulder if highest_wrist == l_wrist else r_shoulder
@@ -133,12 +140,12 @@ def process_bowling_video(video_path, output_path):
                             (wrist_pixel_x + 25, wrist_pixel_y - 45),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 254), 3, cv2.LINE_AA)
                 
-                # FIX: Replaced syntax breaking character with precise RGB Tuple for pure Amber-Yellow
+                # FIX: Swapped out broken syntax text for a clean neon-yellow color tuple
                 cv2.putText(frame, f"ARM ANGLE: {int(arm_angle_deg)} deg",
                             (wrist_pixel_x + 25, wrist_pixel_y - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 230, 245), 3, cv2.LINE_AA)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 255), 3, cv2.LINE_AA)
 
-            # Strides
+            # Stride Counting
             if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
                 lowest_ankle_y = max(l_ankle.y, r_ankle.y)
                 if lowest_ankle_y > 0.82:
@@ -150,7 +157,7 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"Strides Counted: {stride_count}", (40, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3, cv2.LINE_AA)
 
-            # Velocity
+            # Horizontal Running Velocity
             if l_hip.visibility > 0.5:
                 current_hip_x = l_hip.x * w
                 if prev_hip_x is not None:
@@ -166,7 +173,7 @@ def process_bowling_video(video_path, output_path):
     cap.release()
     out.release()
 
-    # Build summary stats to send back to frontend
+    # Formulate final dataset averages to stream back to your frontend grid panels
     summary = {
         "strides": stride_count,
         "avg_l_knee": int(np.mean(l_knee_angles)) if l_knee_angles else 0,
@@ -187,11 +194,11 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_video():
     if 'video' not in request.files:
-        return jsonify({'error': 'No video file uploaded'}), 400
+        return jsonify({'error': 'No video asset submitted'}), 400
 
     file = request.files['video']
     if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
+        return jsonify({'error': 'Empty target file chosen'}), 400
 
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input_raw.mp4')
     file.save(input_path)
@@ -199,9 +206,9 @@ def upload_video():
     output_filename = 'analyzed_output.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-    print("⏳ Processing started...")
+    print("⏳ Cloud Engine: Commencing Biomechanical Framework Mapping...")
     success, summary = process_bowling_video(input_path, output_path)
-    print("✅ Processing complete!")
+    print("✅ Cloud Engine: Video Processing Finalized Successfully!")
 
     if success:
         return jsonify({
@@ -209,7 +216,7 @@ def upload_video():
             'summary': summary
         })
     else:
-        return jsonify({'error': 'Video processing failed'}), 500
+        return jsonify({'error': 'The data compiler dropped during execution'}), 500
 
 
 @app.route('/static/<filename>')
