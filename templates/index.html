@@ -80,12 +80,15 @@
   .processing-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 1px; }
   .results-panel { display: none; flex-direction: column; }
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
-  .stat-cell { background: var(--surface); padding: 20px 16px; text-align: center; }
-  .stat-cell .val { font-family: var(--font-display); font-size: 2rem; color: var(--cyan); line-height: 1; }
-  .stat-cell .val.yellow { color: var(--yellow); }
-  .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
-  .video-wrap { background: #000; }
-  .video-wrap video { width: 100%; height: auto; display: block; }
+  .stats-grid .stat-cell { background: var(--surface); padding: 20px 16px; text-align: center; }
+  .stats-grid .stat-cell .val { font-family: var(--font-display); font-size: 2rem; color: var(--cyan); line-height: 1; }
+  .stats-grid .stat-cell .val.yellow { color: var(--yellow); }
+  .stats-grid .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+  .video-wrap { background: #000; position: relative; }
+  
+  /* MOBILE COMPATIBILITY: Force absolute inline controls to appear over canvas architectures */
+  .video-wrap video { width: 100%; height: auto; display: block; object-fit: contain; background: #000; }
+  
   .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); }
   .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
   .btn-again:hover { border-color: var(--cyan); color: var(--cyan); }
@@ -163,7 +166,9 @@
 
   <div class="upload-card" id="results-panel" style="display:none;">
     <div class="results-panel" style="display:flex;">
-      <div class="video-wrap"><video id="output-player" controls playsinline></video></div>
+      <div class="video-wrap">
+        <video id="output-player" controls autoplay muted playsinline></video>
+      </div>
       <div class="stats-grid">
         <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
         <div class="stat-cell"><div class="val" id="st-lknee">—</div><div class="lbl">Avg L Knee</div></div>
@@ -186,8 +191,7 @@
 </footer>
 
 <script>
-  /* Flask template — uploads go to /upload on same origin */
-const BACKEND_URL = 'https://perfect-release-cricket-ball.onrender.com';
+  const BACKEND_URL = 'https://perfect-release-cricket-ball.onrender.com';
 
   let selectedFile = null;
 
@@ -228,8 +232,13 @@ const BACKEND_URL = 'https://perfect-release-cricket-ball.onrender.com';
       document.getElementById('processing-panel').style.display = 'none';
       if (data.video_url) {
         const player = document.getElementById('output-player');
-        player.src = `${BACKEND_URL}${data.video_url}?t=${Date.now()}`;
+        
+        // URL FORMAT ALIGNMENT FIX: Prevent double backend endpoints prefixes from creating broken URLs
+        const cleanVideoUrl = data.video_url.startsWith('http') ? data.video_url : `${BACKEND_URL}${data.video_url}`;
+        
+        player.src = cleanVideoUrl;
         player.load();
+        
         if (data.summary) {
           const s = data.summary;
           document.getElementById('st-strides').textContent = s.strides ?? '—';
