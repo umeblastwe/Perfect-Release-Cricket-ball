@@ -8,10 +8,10 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Allow cross-origin requests globally (crucial for local testing and phone access)
+# Enable cross-origin resource sharing globally for phone testing
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Configure upload and output folders
+# Define explicit paths for uploads and static analytics assets
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 OUTPUT_FOLDER = os.path.join(os.getcwd(), 'static')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -19,11 +19,11 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max upload size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB structural ceiling
 
 
 def calculate_joint_angle(p1, p2, p3):
-    """Calculates the angle at the vertex (p2) using three points."""
+    """Calculates the internal vector angle at a specific joint vertex (p2)."""
     a = np.array([p1.x, p1.y])
     b = np.array([p2.x, p2.y])
     c = np.array([p3.x, p3.y])
@@ -35,7 +35,7 @@ def calculate_joint_angle(p1, p2, p3):
 
 
 def process_bowling_video(video_path, output_path):
-    """Core biomechanics analysis engine optimized for Linux Cloud Servers and Browser streaming."""
+    """Core computer vision biomechanics engine with cross-platform H.264 container fallbacks."""
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(
         static_image_mode=False,
@@ -53,13 +53,13 @@ def process_bowling_video(video_path, output_path):
     fps = cap.get(cv2.CAP_PROP_FPS)
     time_per_frame = 1.0 / fps if fps > 0 else 0.0167
 
-    # STEP 1 FIX: Use 'avc1' (H.264) codec container so the resulting video can be natively streamed by web browsers
+    # WEB-COMPATIBLE FIX: Force 'avc1' (H.264) container encoding so HTML5 web browsers can play it natively
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
-    # ULTIMATE FALLBACK: If avc1 has compiler limits on certain server boxes, drop to mp4v container
+    # HARDWARE FALLBACK: If system packages lack avc1 bindings, drop down to standard mp4v safely
     if not out.isOpened():
-        print("⚠️ H.264 container failed. Falling back to native mp4v layer...")
+        print("⚠️ H.264 compilation failed. Dropping to default mp4v container layer...")
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps if fps > 0 else 25.0, (orig_w, orig_h))
 
@@ -67,7 +67,6 @@ def process_bowling_video(video_path, output_path):
     stride_count = 0
     foot_was_down = False
 
-    # Data accumulators for the dashboard metrics
     l_knee_angles = []
     r_knee_angles = []
     arm_angles = []
@@ -102,7 +101,7 @@ def process_bowling_video(video_path, output_path):
             l_wrist  = landmarks[mp_pose.PoseLandmark.LEFT_WRIST]
             r_wrist  = landmarks[mp_pose.PoseLandmark.RIGHT_WRIST]
 
-            # Left Knee Tracking
+            # Left Knee Angle tracking
             if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                 l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
                 l_knee_angles.append(l_angle)
@@ -111,7 +110,7 @@ def process_bowling_video(video_path, output_path):
                             (int(l_knee.x * w) + 20, int(l_knee.y * h)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, l_color, 3, cv2.LINE_AA)
 
-            # Right Knee Tracking
+            # Right Knee Angle tracking
             if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
                 r_angle = calculate_joint_angle(r_hip, r_knee, r_ankle)
                 r_knee_angles.append(r_angle)
@@ -120,7 +119,7 @@ def process_bowling_video(video_path, output_path):
                             (int(r_knee.x * w) + 20, int(r_knee.y * h) - 30),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, r_color, 3, cv2.LINE_AA)
 
-            # Hands Height & Arm Release Trajectory Angle
+            # Arm Release Slant Angle & Relative Delivery Point Elevation
             if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5 and l_shoulder.visibility > 0.5:
                 highest_wrist = l_wrist if l_wrist.y < r_wrist.y else r_wrist
                 corresponding_shoulder = l_shoulder if highest_wrist == l_wrist else r_shoulder
@@ -144,7 +143,7 @@ def process_bowling_video(video_path, output_path):
                             (wrist_pixel_x + 25, wrist_pixel_y - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 242, 255), 3, cv2.LINE_AA)
 
-            # Stride Counting
+            # Stride Counter Logic
             if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
                 lowest_ankle_y = max(l_ankle.y, r_ankle.y)
                 if lowest_ankle_y > 0.82:
@@ -156,7 +155,7 @@ def process_bowling_video(video_path, output_path):
                 cv2.putText(frame, f"Strides Counted: {stride_count}", (40, 50),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 3, cv2.LINE_AA)
 
-            # Horizontal Run-up Velocity
+            # Run-up/Delivery Frame Velocity
             if l_hip.visibility > 0.5:
                 current_hip_x = l_hip.x * w
                 if prev_hip_x is not None:
@@ -172,7 +171,6 @@ def process_bowling_video(video_path, output_path):
     cap.release()
     out.release()
 
-    # Formulate final data dictionary to stream back to dashboard panels
     summary = {
         "strides": stride_count,
         "avg_l_knee": int(np.mean(l_knee_angles)) if l_knee_angles else 0,
@@ -200,40 +198,39 @@ def upload_video():
         return jsonify({'error': 'No file selected'}), 400
 
     input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input_raw.mp4')
+    if os.path.exists(input_path):
+        os.remove(input_path)
     file.save(input_path)
 
-    output_filename = 'analyzed_output.mp4'
+    # ANTI-CACHE BUG FIX: Generate a completely unique filename using a timestamp to destroy browser memory patterns
+    epoch_time = int(time.time())
+    output_filename = f'analyzed_{epoch_time}.mp4'
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
-    print("⏳ Processing started...")
+    print(f"⏳ Processing dynamic tracking for {output_filename}...")
     success, summary = process_bowling_video(input_path, output_path)
     print("✅ Processing complete!")
 
     if success:
-        # Appending an epoch timestamp query (?t=...) forces the browser to discard cached 
-        # copies of older runs and cleanly stream the brand new processed video file every time.
-        epoch_time = int(time.time())
         return jsonify({
-            'video_url': f'/static/{output_filename}?t={epoch_time}',
+            'video_url': f'/static/{output_filename}?v={epoch_time}',
             'summary': summary
         })
     else:
         return jsonify({'error': 'Video processing failed'}), 500
 
 
-# STEP 2 FIX: Complete overhaul to serve clean raw chunk data to HTML5 video components
+# SERVER STREAM FIX: Overhaul file distribution to serve direct stream headers that bypass Render's Gzip filter
 @app.route('/static/<filename>')
 def serve_video(filename):
     video_path = os.path.join(app.config['OUTPUT_FOLDER'], filename)
     
-    # Check if the file exists safely
     if not os.path.exists(video_path):
         return jsonify({'error': 'Video asset not found'}), 404
 
-    # Build a raw cloud-optimized streaming response directly from file bytes
     response = make_response(send_file(video_path, mimetype='video/mp4'))
     
-    # Force headers that bypass Render's aggressive Gzip layers and eliminate browser caching lag
+    # Force absolute media attributes onto the server response headers
     response.headers['Content-Type'] = 'video/mp4'
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
@@ -243,6 +240,5 @@ def serve_video(filename):
 
 
 if __name__ == '__main__':
-    # Support dynamic cloud routing via environment ports
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
