@@ -401,7 +401,8 @@
 </footer>
 
 <script>
-  /* Flask template — uploads go to /upload on same origin */
+  // Empty = same origin (works on Render directly)
+  // If embedding in WordPress, change to: 'https://perfect-release-cricket-ball.onrender.com'
   const BACKEND_URL = '';
 
   let selectedFile = null;
@@ -442,25 +443,58 @@
     document.getElementById('processing-panel').style.display = 'block';
     document.getElementById('results-panel').style.display = 'none';
     elapsedSec = 0;
-    updateProcessingLabel();
 
+    // Update label to show waking up
+    const subText = document.getElementById('processing-sub-text');
+    if (subText) subText.textContent = 'Waking up server... (first request may take 30s)';
+
+    // Step 1: ping /health to wake Render free tier, then upload
+    fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(45000) })
+    .catch(() => {})   // ignore health check errors — still try upload
+    .finally(() => {
+      if (subText) subText.textContent = 'Uploading video...';
+      doUpload();
+    });
+  }
+
+  function doUpload() {
+    const subText = document.getElementById('processing-sub-text');
     const formData = new FormData();
     formData.append('video', selectedFile);
 
-    fetch(`${BACKEND_URL}/upload`, { method: 'POST', body: formData })
+    fetch(`${BACKEND_URL}/upload`, {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(300000)   // 5 min timeout for full processing
+    })
     .then(r => {
-      if (!r.ok) throw new Error('Upload failed: ' + r.status);
+      if (!r.ok) throw new Error('Server error ' + r.status);
       return r.json();
     })
     .then(data => {
-      if (!data.job_id) throw new Error(data.error || 'No job ID returned');
-      startPolling(data.job_id);
+      // ── New async backend: returns job_id ──────────────────────────────
+      if (data.job_id) {
+        if (subText) subText.textContent = 'Mapping joints · Computing angles · 0s elapsed';
+        elapsedSec = 0;
+        startPolling(data.job_id);
+      }
+      // ── Old sync backend: returns video_url directly ───────────────────
+      else if (data.video_url) {
+        showResults(data);
+      }
+      else {
+        throw new Error(data.error || 'Unexpected response from server');
+      }
     })
     .catch(err => {
-      console.error(err);
-      alert('Upload failed. Check your connection and try again.');
+      console.error('Upload error:', err);
+      const msg = err.name === 'TimeoutError'
+        ? 'Request timed out. Video processing le rahi hai — page reload karo aur dobara try karo.'
+        : 'Upload failed: ' + err.message;
+      alert(msg);
       resetTool();
     });
+  }
   }
 
   function startPolling(jobId) {
