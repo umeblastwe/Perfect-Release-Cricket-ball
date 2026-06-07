@@ -93,6 +93,7 @@
   /* ── BENCHMARK REFERENCE ───────────────────────────── */
   .ref-section { padding: 0 24px 80px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
   .ref-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .ref-card:hover { border-color: rgba(0,242,254,0.15); }
   .ref-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
   .ref-header-title { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 1px; color: #fff; }
   .ref-header-sub { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
@@ -212,7 +213,6 @@
   </div>
 </section>
 
-<!-- ════════════════ BENCHMARK REFERENCE ════════════════ -->
 <div class="divider"></div>
 <section class="ref-section" id="benchmarks">
   <div style="text-align:center;margin-bottom:28px;padding-top:80px;">
@@ -227,7 +227,6 @@
       <div class="ref-header-sub">Based on professional cricket bowling standards</div>
     </div>
 
-    <!-- KNEE ANGLE -->
     <div class="ref-metric open" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">🦵</span>
@@ -259,7 +258,6 @@
       </div>
     </div>
 
-    <!-- ARM ANGLE -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">💪</span>
@@ -291,7 +289,6 @@
       </div>
     </div>
 
-    <!-- RELEASE HEIGHT -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">📏</span>
@@ -323,7 +320,6 @@
       </div>
     </div>
 
-    <!-- STRIDES -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">👟</span>
@@ -355,7 +351,6 @@
       </div>
     </div>
 
-    <!-- VELOCITY -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">⚡</span>
@@ -387,7 +382,6 @@
       </div>
     </div>
 
-    <!-- Legend -->
     <div class="legend-strip">
       <div class="legend-item"><div class="ref-dot dot-green"></div> Perfect</div>
       <div class="legend-item"><div class="ref-dot dot-yellow"></div> Moderate — Room to improve</div>
@@ -396,13 +390,15 @@
 
   </div>
 </section>
+
+<footer>
   <p>Perfect Release AI · <span>Beta</span> · Built for cricket & bowling athletes</p>
   <p style="margin-top:8px;font-size:0.72rem;">AI analysis is a training aid, not a substitute for professional coaching.</p>
 </footer>
 
 <script>
   // Empty = same origin (works on Render directly)
-  // If embedding in WordPress, change to: 'https://perfect-release-cricket-ball.onrender.com'
+  // If embedding in WordPress, change to your exact Render URL
   const BACKEND_URL = '';
 
   let selectedFile = null;
@@ -429,11 +425,7 @@
     if (file && file.type.startsWith('video/')) setFile(file);
   }
 
-  // ── Polling logic ───────────────────────────────────────────────────────────
-  // Upload returns immediately with a job_id (202 Accepted).
-  // We poll /status/<job_id> every 3 seconds until done or error.
-  // This avoids gunicorn timeout killing the connection mid-processing.
-
+  // ── Corrected Polling Engine ───────────────────────────────────────────────
   let pollInterval = null;
   let elapsedSec   = 0;
 
@@ -444,13 +436,12 @@
     document.getElementById('results-panel').style.display = 'none';
     elapsedSec = 0;
 
-    // Update label to show waking up
     const subText = document.getElementById('processing-sub-text');
     if (subText) subText.textContent = 'Waking up server... (first request may take 30s)';
 
-    // Step 1: ping /health to wake Render free tier, then upload
+    // Step 1: Wake up Render free tier container, then upload
     fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(45000) })
-    .catch(() => {})   // ignore health check errors — still try upload
+    .catch(() => {})   
     .finally(() => {
       if (subText) subText.textContent = 'Uploading video...';
       doUpload();
@@ -465,20 +456,20 @@
     fetch(`${BACKEND_URL}/upload`, {
       method: 'POST',
       body: formData,
-      signal: AbortSignal.timeout(300000)   // 5 min timeout for full processing
+      signal: AbortSignal.timeout(300000) 
     })
     .then(r => {
       if (!r.ok) throw new Error('Server error ' + r.status);
       return r.json();
     })
     .then(data => {
-      // ── New async backend: returns job_id ──────────────────────────────
+      // Async state initialization confirmation
       if (data.job_id) {
         if (subText) subText.textContent = 'Mapping joints · Computing angles · 0s elapsed';
         elapsedSec = 0;
         startPolling(data.job_id);
       }
-      // ── Old sync backend: returns video_url directly ───────────────────
+      // Failover fallback structure for old synchronous engine responses
       else if (data.video_url) {
         showResults(data);
       }
@@ -489,7 +480,7 @@
     .catch(err => {
       console.error('Upload error:', err);
       const msg = err.name === 'TimeoutError'
-        ? 'Request timed out. Video processing le rahi hai — page reload karo aur dobara try karo.'
+        ? 'Request timed out. Video processing context lost — reload page and try again.'
         : 'Upload failed: ' + err.message;
       alert(msg);
       resetTool();
@@ -504,19 +495,20 @@
       fetch(`${BACKEND_URL}/status/${jobId}`)
       .then(r => r.json())
       .then(data => {
-        if (data.status === 'done') {
+        // MATCH FIXED: maps to backend string state "completed" instead of old "done"
+        if (data.status === 'completed') {
           clearInterval(pollInterval);
-          showResults(data);
-        } else if (data.status === 'error') {
+          showResults(data); // data variable holds nested video_url and summary objects
+        } 
+        // MATCH FIXED: maps to backend string state "failed" instead of old "error"
+        else if (data.status === 'failed') {
           clearInterval(pollInterval);
-          alert('Processing failed: ' + (data.error || 'Unknown error'));
+          alert('Processing failed: ' + (data.error || 'Unknown biomechanics analysis failure'));
           resetTool();
         }
-        // status === 'processing' → keep polling
       })
       .catch(() => {
-        // Network blip — keep polling, don't abort
-        console.warn('Poll request failed, retrying...');
+        console.warn('Network packet drop during status poll, retrying context query...');
       });
     }, 3000);
   }
@@ -530,7 +522,6 @@
     sub.textContent = `Mapping joints · Computing angles · ${t} elapsed`;
   }
 
-  // ── Helper: apply colour class based on thresholds ───────────────────────
   function rate(elId, val, goodMin, goodMax, warnMin, warnMax) {
     const el = document.getElementById(elId);
     if (!el) return;
@@ -593,7 +584,6 @@
   }
 
   function toggleRef(el) {
-    // Don't toggle if clicking inside the rows content
     el.classList.toggle('open');
   }
 </script>
