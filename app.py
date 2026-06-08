@@ -26,6 +26,7 @@ jobs_lock = threading.Lock()
 
 
 def calculate_joint_angle(p1, p2, p3):
+    """Generic angle at vertex p2 between p1-p2-p3."""
     a = np.array([p1.x, p1.y])
     b = np.array([p2.x, p2.y])
     c = np.array([p3.x, p3.y])
@@ -37,6 +38,7 @@ def calculate_joint_angle(p1, p2, p3):
 
 
 def calculate_elbow_angle(shoulder, elbow, wrist):
+    """Calculates elbow flexion/extension angle."""
     s = np.array([shoulder.x, shoulder.y])
     e = np.array([elbow.x,    elbow.y])
     w = np.array([wrist.x,    wrist.y])
@@ -48,12 +50,13 @@ def calculate_elbow_angle(shoulder, elbow, wrist):
 
 
 def reencode_for_web(raw_path, final_path):
+    """ffmpeg re-encode with faststart for browser playback."""
     try:
         result = subprocess.run([
             'ffmpeg', '-y', '-i', raw_path,
             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
             '-movflags', '+faststart',
-            '-an',
+            '-an',  # No audio to preserve Render container RAM
             final_path
         ], capture_output=True, timeout=180)
         if os.path.exists(raw_path):
@@ -68,6 +71,7 @@ def reencode_for_web(raw_path, final_path):
 
 
 def process_bowling_video(video_path, output_path, job_id):
+    """Runs in background thread. Wipes MediaPipe immediately after use to protect RAM."""
     pose = None
     cap = None
     out = None
@@ -78,7 +82,7 @@ def process_bowling_video(video_path, output_path, job_id):
             static_image_mode=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
-            model_complexity=0
+            model_complexity=0  # mandatory for 512MB Render tier
         )
 
         cap = cv2.VideoCapture(video_path)
@@ -92,9 +96,9 @@ def process_bowling_video(video_path, output_path, job_id):
 
         max_dim = 720
         if max(orig_w, orig_h) > max_dim:
-            scale = max_dim / max(orig_w, orig_h)
-            proc_w = int(orig_w * scale)
-            proc_h = int(orig_h * scale)
+            scale_dims = max_dim / max(orig_w, orig_h)
+            proc_w = int(orig_w * scale_dims)
+            proc_h = int(orig_h * scale_dims)
         else:
             proc_w, proc_h = orig_w, orig_h
 
@@ -118,7 +122,7 @@ def process_bowling_video(video_path, output_path, job_id):
         elbow_at_peak         = None
         bowling_side          = None
 
-        # Image Snapshot holding structures
+        # Image Snapshot tracker
         release_snapshot_frame = None
 
         while cap.isOpened():
@@ -196,6 +200,7 @@ def process_bowling_video(video_path, output_path, job_id):
                     current_elbow_angle = calculate_elbow_angle(b_shoulder, b_elbow, b_wrist)
                     current_wrist_y     = b_wrist.y
 
+                    # PHASE 1: Detect horizontal plane setup
                     arm_is_horizontal = abs(b_shoulder.y - b_elbow.y) < 0.12
 
                     if arm_is_horizontal and not arm_reached_horizontal:
@@ -204,13 +209,13 @@ def process_bowling_video(video_path, output_path, job_id):
                         elbow_at_peak          = current_elbow_angle
                         arm_reached_horizontal = True
 
+                    # PHASE 2: Check trajectory elevation profiles
                     if arm_reached_horizontal:
                         if current_wrist_y < (wrist_peak_y or 1.0):
                             wrist_peak_y  = current_wrist_y
                             elbow_at_peak = current_elbow_angle
-                            # Snapshot update whenever a new peak point is unlocked
-                            release_snapshot_frame = frame.copy()
 
+                    # PHASE 3: Capture exact calculation profile event frame
                     if (prev_wrist_y is not None
                             and current_wrist_y > (prev_wrist_y + 0.02)
                             and elbow_at_horizontal is not None
@@ -228,10 +233,8 @@ def process_bowling_video(video_path, output_path, job_id):
                         legal_txt = "LEGAL" if extension <= 15 else "ILLEGAL ACTION!"
                         put_label(frame, legal_txt, wx + 14, wy - 6, ext_color)
 
-                        # Flatten current state annotations inside the static context snapshot image block
-                        if release_snapshot_frame is not None:
-                            put_label(release_snapshot_frame, f"RELEASE MOMENT - EXT: {int(extension)}\u00b0", wx + 14, wy - 30, ext_color)
-                            put_label(release_snapshot_frame, legal_txt, wx + 14, wy - 6, ext_color)
+                        # FIXED CRITICAL COUPLING: Lock frame state snapshot instantly here!
+                        release_snapshot_frame = frame.copy()
 
                         arm_reached_horizontal = False
                         elbow_at_horizontal    = None
@@ -274,7 +277,7 @@ def process_bowling_video(video_path, output_path, job_id):
         pose.close()
         pose = None
 
-        # Process image saving logic if captured
+        # Write fixed snapshot segment out to static directory structure
         snapshot_filename = None
         if release_snapshot_frame is not None:
             snapshot_filename = f"snapshot_{job_id}.jpg"
@@ -350,7 +353,7 @@ def upload_video():
 
     file.save(input_path)
 
-    # Autoclean logic
+    # Disk Cleanup Engine Execution
     for f in os.listdir(OUTPUT_FOLDER):
         if (f.startswith('analyzed_') or f.startswith('snapshot_')) and f != output_name:
             try: os.remove(os.path.join(OUTPUT_FOLDER, f))
