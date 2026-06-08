@@ -87,7 +87,6 @@
   .video-wrap { background: #000; }
   .video-wrap video { width: 100%; height: auto; display: block; }
   
-  /* ── SNAPSHOT COMPONENT STYLING ──────────────────────── */
   .snapshot-card { background: rgba(255, 255, 255, 0.02); border-top: 1px solid var(--border); padding: 24px; text-align: center; }
   .snapshot-title { font-size: 0.72rem; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
   .snapshot-img-wrap { width: 100%; max-width: 320px; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
@@ -97,7 +96,6 @@
   .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
   .btn-again:hover { border-color: var(--cyan); color: var(--cyan); }
 
-  /* ── BENCHMARK REFERENCE ───────────────────────────── */
   .ref-section { padding: 0 24px 80px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
   .ref-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .ref-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
@@ -507,7 +505,6 @@
       fetch(`${BACKEND_URL}/status/${jobId}`)
       .then(r => r.json())
       .then(data => {
-        // MATCH SYNCHRONIZED: Maps to backend token states correctly now
         if (data.status === 'done') {
           clearInterval(pollInterval);
           showResults(data);
@@ -544,12 +541,10 @@
   function showResults(data) {
     document.getElementById('processing-panel').style.display = 'none';
 
-    // 1. Render Video
     const player = document.getElementById('output-player');
     player.src = `${BACKEND_URL}${data.video_url}?t=${Date.now()}`;
     player.load();
 
-    // 2. Render Dynamic Captured Snapshot Picture
     const snapCard = document.getElementById('snapshot-card');
     const snapImg = document.getElementById('output-snapshot');
     if (data.snapshot_url) {
@@ -559,7 +554,6 @@
       snapCard.style.display = 'none';
     }
 
-    // 3. Populate Metrics Grid
     if (data.summary) {
       const s = data.summary;
       document.getElementById('st-strides').textContent = s.strides ?? '—';
