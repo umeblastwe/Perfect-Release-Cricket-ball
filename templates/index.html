@@ -93,7 +93,6 @@
   /* ── BENCHMARK REFERENCE ───────────────────────────── */
   .ref-section { padding: 0 24px 80px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
   .ref-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .ref-card:hover { border-color: rgba(0,242,254,0.15); }
   .ref-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
   .ref-header-title { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 1px; color: #fff; }
   .ref-header-sub { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
@@ -201,9 +200,11 @@
         <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
         <div class="stat-cell"><div class="val" id="st-lknee">—</div><div class="lbl">Avg L Knee</div></div>
         <div class="stat-cell"><div class="val" id="st-rknee">—</div><div class="lbl">Avg R Knee</div></div>
-        <div class="stat-cell"><div class="val yellow" id="st-arm">—</div><div class="lbl">Arm Angle</div></div>
-        <div class="stat-cell"><div class="val yellow" id="st-rel">—</div><div class="lbl">Release Pts</div></div>
-        <div class="stat-cell"><div class="val" id="st-vel">—</div><div class="lbl">Velocity px/s</div></div>
+        <div class="stat-cell" style="grid-column:span 2"><div class="val" id="st-elbow-ext">—</div><div class="lbl">Elbow Extension (ICC avg)</div></div>
+        <div class="stat-cell"><div class="val" id="st-elbow-max">—</div><div class="lbl">Max Extension</div></div>
+        <div class="stat-cell" style="grid-column:span 2"><div class="val" id="st-icc-verdict" style="font-size:1.3rem">—</div><div class="lbl">ICC 15° Rule Verdict</div></div>
+        <div class="stat-cell"><div class="val" id="st-rel">—</div><div class="lbl">Release Pts</div></div>
+        <div class="stat-cell" style="grid-column:span 2"><div class="val" id="st-vel">—</div><div class="lbl">Velocity px/s</div></div>
       </div>
       <div class="result-actions">
         <button class="btn-again" onclick="resetTool()">↩ Analyze Another</button>
@@ -213,6 +214,7 @@
   </div>
 </section>
 
+<!-- ════════════════ BENCHMARK REFERENCE ════════════════ -->
 <div class="divider"></div>
 <section class="ref-section" id="benchmarks">
   <div style="text-align:center;margin-bottom:28px;padding-top:80px;">
@@ -227,6 +229,7 @@
       <div class="ref-header-sub">Based on professional cricket bowling standards</div>
     </div>
 
+    <!-- KNEE ANGLE -->
     <div class="ref-metric open" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">🦵</span>
@@ -258,37 +261,46 @@
       </div>
     </div>
 
+    <!-- ARM ANGLE -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">💪</span>
-        <span class="ref-metric-name">Arm Angle at Release</span>
+        <span class="ref-metric-name">Elbow Extension — ICC 15° Rule</span>
         <span class="ref-chevron">▼</span>
       </div>
       <div class="ref-rows">
         <div class="ref-row">
           <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">Perfect — High, vertical arm action. Generates steep bounce and maximum pace. Classic fast-bowling form.
-            <small>Think Jasprit Bumrah or Pat Cummins at release.</small>
+          <div class="ref-desc">Legal &amp; Efficient — Elbow extends minimally from horizontal to release. Clean bowling action. ICC compliant.
+            <small>Measured: shoulder horizontal → ball release. Extension ≤ 10° is elite level.</small>
           </div>
-          <div class="ref-range">75°–110°</div>
+          <div class="ref-range">0°–10°</div>
         </div>
         <div class="ref-row">
           <div class="ref-dot dot-yellow"></div>
-          <div class="ref-desc">Moderate — Slightly round-arm or early release. Produces swing and seam movement but less bounce.
-            <small>Good for swing bowlers; acceptable at this level.</small>
+          <div class="ref-desc">Legal but borderline — Within ICC limit but marginal. Worth monitoring under match conditions.
+            <small>ICC allows maximum 15°. At this range, umpire reports become possible.</small>
           </div>
-          <div class="ref-range">45°–74°</div>
+          <div class="ref-range">11°–15°</div>
         </div>
         <div class="ref-row">
           <div class="ref-dot dot-red"></div>
-          <div class="ref-desc">Needs Work — Very slinging/round-arm action. High injury risk to shoulder and elbow. Difficult to maintain accuracy.
-            <small>Work with a coach on arm path mechanics.</small>
+          <div class="ref-desc">Illegal Action — Elbow straightens beyond the 15° ICC limit. Considered a throw. Player can be reported and suspended.
+            <small>Requires biomechanics lab review under ICC Article 2.3.</small>
           </div>
-          <div class="ref-range">&lt; 45°</div>
+          <div class="ref-range">&gt; 15°</div>
+        </div>
+        <div class="ref-row" style="background:rgba(0,242,254,0.04);border:1px solid rgba(0,242,254,0.1);">
+          <div class="ref-dot" style="background:#525769;"></div>
+          <div class="ref-desc" style="color:var(--muted);">Unmeasurable — Camera angle (side-on view required) or elbow landmark not visible. Result shown as N/A.
+            <small>For accurate ICC measurement, film from front-on or slight angle — not directly side-on.</small>
+          </div>
+          <div class="ref-range" style="color:var(--muted);">N/A</div>
         </div>
       </div>
     </div>
 
+    <!-- RELEASE HEIGHT -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">📏</span>
@@ -320,6 +332,7 @@
       </div>
     </div>
 
+    <!-- STRIDES -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">👟</span>
@@ -351,6 +364,7 @@
       </div>
     </div>
 
+    <!-- VELOCITY -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">⚡</span>
@@ -382,6 +396,7 @@
       </div>
     </div>
 
+    <!-- Legend -->
     <div class="legend-strip">
       <div class="legend-item"><div class="ref-dot dot-green"></div> Perfect</div>
       <div class="legend-item"><div class="ref-dot dot-yellow"></div> Moderate — Room to improve</div>
@@ -390,15 +405,13 @@
 
   </div>
 </section>
-
-<footer>
   <p>Perfect Release AI · <span>Beta</span> · Built for cricket & bowling athletes</p>
   <p style="margin-top:8px;font-size:0.72rem;">AI analysis is a training aid, not a substitute for professional coaching.</p>
 </footer>
 
 <script>
   // Empty = same origin (works on Render directly)
-  // If embedding in WordPress, change to your exact Render URL
+  // If embedding in WordPress, change to: 'https://perfect-release-cricket-ball.onrender.com'
   const BACKEND_URL = '';
 
   let selectedFile = null;
@@ -425,7 +438,11 @@
     if (file && file.type.startsWith('video/')) setFile(file);
   }
 
-  // ── Corrected Polling Engine ───────────────────────────────────────────────
+  // ── Polling logic ───────────────────────────────────────────────────────────
+  // Upload returns immediately with a job_id (202 Accepted).
+  // We poll /status/<job_id> every 3 seconds until done or error.
+  // This avoids gunicorn timeout killing the connection mid-processing.
+
   let pollInterval = null;
   let elapsedSec   = 0;
 
@@ -436,12 +453,13 @@
     document.getElementById('results-panel').style.display = 'none';
     elapsedSec = 0;
 
+    // Update label to show waking up
     const subText = document.getElementById('processing-sub-text');
     if (subText) subText.textContent = 'Waking up server... (first request may take 30s)';
 
-    // Step 1: Wake up Render free tier container, then upload
+    // Step 1: ping /health to wake Render free tier, then upload
     fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(45000) })
-    .catch(() => {})   
+    .catch(() => {})   // ignore health check errors — still try upload
     .finally(() => {
       if (subText) subText.textContent = 'Uploading video...';
       doUpload();
@@ -456,20 +474,20 @@
     fetch(`${BACKEND_URL}/upload`, {
       method: 'POST',
       body: formData,
-      signal: AbortSignal.timeout(300000) 
+      signal: AbortSignal.timeout(300000)   // 5 min timeout for full processing
     })
     .then(r => {
       if (!r.ok) throw new Error('Server error ' + r.status);
       return r.json();
     })
     .then(data => {
-      // Async state initialization confirmation
+      // ── New async backend: returns job_id ──────────────────────────────
       if (data.job_id) {
         if (subText) subText.textContent = 'Mapping joints · Computing angles · 0s elapsed';
         elapsedSec = 0;
         startPolling(data.job_id);
       }
-      // Failover fallback structure for old synchronous engine responses
+      // ── Old sync backend: returns video_url directly ───────────────────
       else if (data.video_url) {
         showResults(data);
       }
@@ -480,7 +498,7 @@
     .catch(err => {
       console.error('Upload error:', err);
       const msg = err.name === 'TimeoutError'
-        ? 'Request timed out. Video processing context lost — reload page and try again.'
+        ? 'Request timed out. Video processing le rahi hai — page reload karo aur dobara try karo.'
         : 'Upload failed: ' + err.message;
       alert(msg);
       resetTool();
@@ -495,20 +513,19 @@
       fetch(`${BACKEND_URL}/status/${jobId}`)
       .then(r => r.json())
       .then(data => {
-        // MATCH FIXED: maps to backend string state "completed" instead of old "done"
-        if (data.status === 'completed') {
+        if (data.status === 'done') {
           clearInterval(pollInterval);
-          showResults(data); // data variable holds nested video_url and summary objects
-        } 
-        // MATCH FIXED: maps to backend string state "failed" instead of old "error"
-        else if (data.status === 'failed') {
+          showResults(data);
+        } else if (data.status === 'error') {
           clearInterval(pollInterval);
-          alert('Processing failed: ' + (data.error || 'Unknown biomechanics analysis failure'));
+          alert('Processing failed: ' + (data.error || 'Unknown error'));
           resetTool();
         }
+        // status === 'processing' → keep polling
       })
       .catch(() => {
-        console.warn('Network packet drop during status poll, retrying context query...');
+        // Network blip — keep polling, don't abort
+        console.warn('Poll request failed, retrying...');
       });
     }, 3000);
   }
@@ -522,6 +539,7 @@
     sub.textContent = `Mapping joints · Computing angles · ${t} elapsed`;
   }
 
+  // ── Helper: apply colour class based on thresholds ───────────────────────
   function rate(elId, val, goodMin, goodMax, warnMin, warnMax) {
     const el = document.getElementById(elId);
     if (!el) return;
@@ -540,21 +558,60 @@
 
     if (data.summary) {
       const s = data.summary;
+
+      // Strides
       document.getElementById('st-strides').textContent = s.strides ?? '—';
       rate('st-strides', s.strides, 10, 20, 5, 9);
 
+      // Knee angles
       document.getElementById('st-lknee').textContent = s.avg_l_knee ? s.avg_l_knee + '°' : '—';
       rate('st-lknee', s.avg_l_knee, 165, 180, 140, 164);
-
       document.getElementById('st-rknee').textContent = s.avg_r_knee ? s.avg_r_knee + '°' : '—';
       rate('st-rknee', s.avg_r_knee, 165, 180, 140, 164);
 
-      document.getElementById('st-arm').textContent = s.avg_arm_angle ? s.avg_arm_angle + '°' : '—';
-      rate('st-arm', s.avg_arm_angle, 75, 110, 45, 74);
+      // ── ICC Elbow Extension ───────────────────────────────────────────────
+      if (s.avg_elbow_ext !== null && s.avg_elbow_ext !== undefined) {
+        // Average extension
+        const extEl = document.getElementById('st-elbow-ext');
+        extEl.textContent = s.avg_elbow_ext + '°';
+        extEl.classList.remove('good','warn','poor');
+        if (s.avg_elbow_ext <= 10)      extEl.classList.add('good');
+        else if (s.avg_elbow_ext <= 15) extEl.classList.add('warn');
+        else                             extEl.classList.add('poor');
 
+        // Max extension
+        const maxEl = document.getElementById('st-elbow-max');
+        maxEl.textContent = s.max_elbow_ext + '°';
+        maxEl.classList.remove('good','warn','poor');
+        if (s.max_elbow_ext <= 10)      maxEl.classList.add('good');
+        else if (s.max_elbow_ext <= 15) maxEl.classList.add('warn');
+        else                             maxEl.classList.add('poor');
+
+        // ICC Verdict
+        const vEl = document.getElementById('st-icc-verdict');
+        vEl.classList.remove('good','poor','warn');
+        if (s.icc_legal === true) {
+          vEl.textContent = '✓ LEGAL';
+          vEl.classList.add('good');
+        } else if (s.icc_legal === false) {
+          vEl.textContent = '✗ ILLEGAL';
+          vEl.classList.add('poor');
+        } else {
+          vEl.textContent = 'N/A';
+        }
+      } else {
+        // Camera angle didn't allow measurement
+        document.getElementById('st-elbow-ext').textContent = 'N/A';
+        document.getElementById('st-elbow-max').textContent = 'N/A';
+        const vEl = document.getElementById('st-icc-verdict');
+        vEl.textContent = 'Unmeasurable';
+        vEl.style.fontSize = '0.85rem';
+        vEl.style.color = 'var(--muted)';
+      }
+
+      // Release & velocity
       document.getElementById('st-rel').textContent = s.avg_release_score ?? '—';
       rate('st-rel', s.avg_release_score, 35, 999, 20, 34);
-
       document.getElementById('st-vel').textContent = s.avg_velocity ?? '—';
       rate('st-vel', s.avg_velocity, 300, 99999, 100, 299);
     }
@@ -584,6 +641,7 @@
   }
 
   function toggleRef(el) {
+    // Don't toggle if clicking inside the rows content
     el.classList.toggle('open');
   }
 </script>
