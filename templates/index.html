@@ -86,18 +86,12 @@
   .video-wrap { background: #000; position: relative; }
   .video-wrap video { width: 100%; height: auto; display: block; }
   
-  /* ── PLAYBACK ACCESSORY STYLING ──────────────────────── */
   .video-controls-strip { display: flex; align-items: center; justify-content: space-between; background: #0b0d14; padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
   .speed-selector-wrap { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
   .speed-select { background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-family: var(--font-body); cursor: pointer; outline: none; transition: border-color 0.2s; }
   .speed-select:focus { border-color: var(--cyan); }
   .btn-download-stream { background: rgba(0, 242, 254, 0.08); color: var(--cyan); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 6px 14px; border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 6px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
   .btn-download-stream:hover { background: var(--cyan); color: #000; }
-
-  .snapshot-card { background: rgba(255, 255, 255, 0.02); border-top: 1px solid var(--border); padding: 24px; text-align: center; }
-  .snapshot-title { font-size: 0.72rem; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
-  .snapshot-img-wrap { width: 100%; max-width: 320px; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .snapshot-img-wrap img { width: 100%; height: auto; display: block; }
 
   .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); }
   .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
@@ -220,13 +214,6 @@
           </select>
         </div>
         <a class="btn-download-stream" id="video-download-anchor" href="#" download="perfect_release_analysis.mp4">💾 Download Video</a>
-      </div>
-
-      <div class="snapshot-card" id="snapshot-card" style="display:none;">
-        <div class="snapshot-title">📸 Captured Release Point</div>
-        <div class="snapshot-img-wrap">
-          <img id="output-snapshot" src="" alt="Release Point Snapshot">
-        </div>
       </div>
 
       <div class="stats-grid">
@@ -518,7 +505,6 @@
     else el.classList.add('poor');
   }
 
-  /* ADJUST PLAYBACK SPEED MODULE */
   function adjustPlaybackSpeed(speedValue) {
     const player = document.getElementById('output-player');
     if (player) {
@@ -531,30 +517,16 @@
 
     const finalVideoPath = `${BACKEND_URL}${data.video_url}`;
 
-    // 1. Render Video Media Stream Element
     const player = document.getElementById('output-player');
     player.src = `${finalVideoPath}?t=${Date.now()}`;
     player.load();
     
-    // Reset speed controller to normal on newly arrived video load
     document.getElementById('video-speed-controller').value = "1.0";
     player.playbackRate = 1.0;
 
-    // 2. Map Download Button Stream Context Link Target
     const downloadBtn = document.getElementById('video-download-anchor');
     downloadBtn.href = finalVideoPath;
 
-    // 3. Render Labeled Target Key Frame Image Snapshot
-    const snapCard = document.getElementById('snapshot-card');
-    const snapImg = document.getElementById('output-snapshot');
-    if (data.snapshot_url) {
-      snapImg.src = `${BACKEND_URL}${data.snapshot_url}?t=${Date.now()}`;
-      snapCard.style.display = 'block';
-    } else {
-      snapCard.style.display = 'none';
-    }
-
-    // 4. Fill Metrics Framework
     if (data.summary) {
       const s = data.summary;
       document.getElementById('st-strides').textContent = s.strides ?? '—';
@@ -571,7 +543,6 @@
       rate('st-vel', s.avg_velocity, 300, 99999, 100, 299);
     }
 
-    document.getElementById('results-panel').style.add = 'flex';
     document.getElementById('results-panel').style.display = 'block';
     document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth' });
     player.play().catch(() => {});
@@ -585,7 +556,6 @@
     document.getElementById('file-preview').style.display = 'none';
     document.getElementById('btn-analyze').style.display = 'none';
     document.getElementById('output-player').src = '';
-    document.getElementById('output-snapshot').src = '';
     document.getElementById('video-download-anchor').href = '#';
     document.getElementById('upload-card').style.display = 'block';
     document.getElementById('processing-panel').style.display = 'none';
