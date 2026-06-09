@@ -113,13 +113,11 @@ def process_bowling_video(video_path, output_path, job_id):
         l_knee_angles, r_knee_angles = [], []
         release_scores, velocities = [], []
 
-        # ── ICC Law Biomechanical Trackers ──
-        elbow_at_horizontal   = None
+        # ── ICC Biomechanical Real-Time Machine State Trackers ──
+        elbow_at_horizontal    = None
         arm_reached_horizontal = False
-        prev_wrist_y          = None
-        wrist_peak_y          = None
-        elbow_at_peak         = None
-        bowling_side          = None
+        prev_wrist_y           = None
+        bowling_side           = None
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -180,7 +178,7 @@ def process_bowling_video(video_path, output_path, job_id):
                     col = (0,255,0) if r_angle > 165 else (200,200,200)
                     put_label(frame, f"R {int(r_angle)}\u00b0", int(r_knee.x*w)+12, int(r_knee.y*h)-20, col)
 
-                # ── ICC Legal Angular Computations Rendering ──
+                # ── Real-Time Continuous ICC Law Evaluation ──
                 both_wrists_visible = (l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5
                                        and l_shoulder.visibility > 0.5 and r_shoulder.visibility > 0.5
                                        and l_elbow.visibility > 0.5 and r_elbow.visibility > 0.5)
@@ -197,45 +195,35 @@ def process_bowling_video(video_path, output_path, job_id):
                     current_elbow_angle = calculate_elbow_angle(b_shoulder, b_elbow, b_wrist)
                     current_wrist_y     = b_wrist.y
 
-                    # Phase 1: Capture Theta Horizontal (Elbow at Shoulder Height)
+                    # Phase 1: Catch when arm first passes horizontal threshold plane
                     arm_is_horizontal = abs(b_shoulder.y - b_elbow.y) < 0.12
                     if arm_is_horizontal and not arm_reached_horizontal:
                         elbow_at_horizontal    = current_elbow_angle
-                        wrist_peak_y           = current_wrist_y
-                        elbow_at_peak          = current_elbow_angle
                         arm_reached_horizontal = True
 
-                    # Phase 2: Capture minimal angle deflection at peak height profile
-                    if arm_reached_horizontal:
-                        if current_wrist_y < (wrist_peak_y or 1.0):
-                            wrist_peak_y  = current_wrist_y
-                            elbow_at_peak = current_elbow_angle
+                    # Continuous Calculation Module based on state profile locks
+                    current_extension = 0.0
+                    if arm_reached_horizontal and elbow_at_horizontal is not None:
+                        # Straightening = Current elbow frame value minus baseline horizontal frame value
+                        current_extension = max(0.0, current_elbow_angle - elbow_at_horizontal)
 
-                    # Phase 3: Compute Differential Extension = Theta Release - Theta Horizontal
-                    if (prev_wrist_y is not None
-                            and current_wrist_y > (prev_wrist_y + 0.02)
-                            and elbow_at_horizontal is not None
-                            and elbow_at_peak is not None):
-
-                        extension = max(0.0, elbow_at_peak - elbow_at_horizontal)
-                        
-                        wx = int(b_wrist.x * w)
-                        wy = int(b_wrist.y * h)
-                        ext_color = (0,255,0) if extension <= 15 else (0,0,255)
-                        
-                        # Print legal text overlay patterns directly inside video stream file
-                        put_label(frame, f"ICC EXTENSION: {int(extension)}\u00b0", wx + 14, wy - 30, ext_color)
-                        legal_txt = "ACTION: LEGAL" if extension <= 15 else "ACTION: ILLEGAL (THROW)"
-                        put_label(frame, legal_txt, wx + 14, wy - 6, ext_color)
-
+                    # Reset trigger tracking if arm falls below shoulder plane entirely (follow through execution completion)
+                    if current_wrist_y > b_shoulder.y + 0.15:
                         arm_reached_horizontal = False
                         elbow_at_horizontal    = None
-                        wrist_peak_y           = None
-                        elbow_at_peak          = None
+
+                    wx = int(b_wrist.x * w)
+                    wy = int(b_wrist.y * h)
+                    ext_color = (0,255,0) if current_extension <= 15 else (0,0,255)
+                    
+                    # Renders values to the stream window continuously across ALL frames
+                    put_label(frame, f"ICC EXTENSION: {int(current_extension)}\u00b0", wx + 14, wy - 30, ext_color)
+                    legal_txt = "ACTION: LEGAL" if current_extension <= 15 else "ACTION: ILLEGAL (THROW)"
+                    put_label(frame, legal_txt, wx + 14, wy - 6, ext_color)
 
                     prev_wrist_y = current_wrist_y
 
-                    # Compute standard release height score
+                    # Compute release leverage indicators
                     ground_ref = max(l_ankle.y, r_ankle.y)
                     rel_score  = (ground_ref - b_wrist.y) * 100
                     release_scores.append(rel_score)
@@ -332,7 +320,6 @@ def upload_video():
 
     file.save(input_path)
 
-    # Automatically purge previous cache models
     for f in os.listdir(OUTPUT_FOLDER):
         if (f.startswith('analyzed_') or f.startswith('snapshot_')) and f != output_name:
             try: os.remove(os.path.join(OUTPUT_FOLDER, f))
