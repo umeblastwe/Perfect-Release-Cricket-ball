@@ -37,6 +37,18 @@ def calculate_joint_angle(p1, p2, p3):
     return np.degrees(np.arccos(cosine_angle))
 
 
+def calculate_elbow_angle(shoulder, elbow, wrist):
+    """Calculates internal elbow joint angle."""
+    s = np.array([shoulder.x, shoulder.y])
+    e = np.array([elbow.x,    elbow.y])
+    w = np.array([wrist.x,    wrist.y])
+    es = s - e
+    ew = w - e
+    cos_a = np.dot(es, ew) / (np.linalg.norm(es) * np.linalg.norm(ew) + 1e-6)
+    cos_a = np.clip(cos_a, -1.0, 1.0)
+    return np.degrees(np.arccos(cos_a))
+
+
 def reencode_for_web(raw_path, final_path):
     """ffmpeg re-encode with faststart for browser playback."""
     try:
@@ -44,7 +56,7 @@ def reencode_for_web(raw_path, final_path):
             'ffmpeg', '-y', '-i', raw_path,
             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
             '-movflags', '+faststart',
-            '-an',  # No audio to preserve Render container RAM
+            '-an',
             final_path
         ], capture_output=True, timeout=180)
         if os.path.exists(raw_path):
@@ -59,7 +71,6 @@ def reencode_for_web(raw_path, final_path):
 
 
 def process_bowling_video(video_path, output_path, job_id):
-    """Runs in background thread. Wipes MediaPipe immediately after use to protect RAM."""
     pose = None
     cap = None
     out = None
@@ -70,7 +81,7 @@ def process_bowling_video(video_path, output_path, job_id):
             static_image_mode=False,
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
-            model_complexity=0  # mandatory for 512MB Render tier
+            model_complexity=0
         )
 
         cap = cv2.VideoCapture(video_path)
@@ -102,9 +113,13 @@ def process_bowling_video(video_path, output_path, job_id):
         l_knee_angles, r_knee_angles = [], []
         release_scores, velocities = [], []
 
-        # Release Snapshot frame tracking variables
-        wrist_peak_y = None
-        release_snapshot_frame = None
+        # ── ICC Law Biomechanical Trackers ──
+        elbow_at_horizontal   = None
+        arm_reached_horizontal = False
+        prev_wrist_y          = None
+        wrist_peak_y          = None
+        elbow_at_peak         = None
+        bowling_side          = None
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -146,8 +161,12 @@ def process_bowling_video(video_path, output_path, job_id):
                 r_hip   = lm[mp_pose.PoseLandmark.RIGHT_HIP]
                 r_knee  = lm[mp_pose.PoseLandmark.RIGHT_KNEE]
                 r_ankle = lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
+                l_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
+                r_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
                 l_wrist = lm[mp_pose.PoseLandmark.LEFT_WRIST]
                 r_wrist = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
+                l_elbow = lm[mp_pose.PoseLandmark.LEFT_ELBOW]
+                r_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
 
                 if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                     l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
@@ -161,23 +180,64 @@ def process_bowling_video(video_path, output_path, job_id):
                     col = (0,255,0) if r_angle > 165 else (200,200,200)
                     put_label(frame, f"R {int(r_angle)}\u00b0", int(r_knee.x*w)+12, int(r_knee.y*h)-20, col)
 
-                # Track Release Height Point & Snapshot Trigger
-                if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5:
-                    highest_wrist = l_wrist if l_wrist.y < r_wrist.y else r_wrist
-                    
-                    # Capture snapshot when wrist reaches its highest physical elevation (minimal y profile)
-                    if wrist_peak_y is None or highest_wrist.y < wrist_peak_y:
-                        wrist_peak_y = highest_wrist.y
-                        
-                        wx = int(highest_wrist.x * w)
-                        wy = int(highest_wrist.y * h)
-                        
-                        # Generate labeled base canvas slice
-                        release_snapshot_frame = frame.copy()
-                        put_label(release_snapshot_frame, "RELEASE POINT DETECTED", wx + 14, wy - 15, (0, 242, 254))
+                # ── ICC Legal Angular Computations Rendering ──
+                both_wrists_visible = (l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5
+                                       and l_shoulder.visibility > 0.5 and r_shoulder.visibility > 0.5
+                                       and l_elbow.visibility > 0.5 and r_elbow.visibility > 0.5)
 
+                if both_wrists_visible:
+                    if bowling_side is None:
+                        bowling_side = 'left' if l_wrist.y < r_wrist.y else 'right'
+
+                    if bowling_side == 'left':
+                        b_shoulder, b_elbow, b_wrist = l_shoulder, l_elbow, l_wrist
+                    else:
+                        b_shoulder, b_elbow, b_wrist = r_shoulder, r_elbow, r_wrist
+
+                    current_elbow_angle = calculate_elbow_angle(b_shoulder, b_elbow, b_wrist)
+                    current_wrist_y     = b_wrist.y
+
+                    # Phase 1: Capture Theta Horizontal (Elbow at Shoulder Height)
+                    arm_is_horizontal = abs(b_shoulder.y - b_elbow.y) < 0.12
+                    if arm_is_horizontal and not arm_reached_horizontal:
+                        elbow_at_horizontal    = current_elbow_angle
+                        wrist_peak_y           = current_wrist_y
+                        elbow_at_peak          = current_elbow_angle
+                        arm_reached_horizontal = True
+
+                    # Phase 2: Capture minimal angle deflection at peak height profile
+                    if arm_reached_horizontal:
+                        if current_wrist_y < (wrist_peak_y or 1.0):
+                            wrist_peak_y  = current_wrist_y
+                            elbow_at_peak = current_elbow_angle
+
+                    # Phase 3: Compute Differential Extension = Theta Release - Theta Horizontal
+                    if (prev_wrist_y is not None
+                            and current_wrist_y > (prev_wrist_y + 0.02)
+                            and elbow_at_horizontal is not None
+                            and elbow_at_peak is not None):
+
+                        extension = max(0.0, elbow_at_peak - elbow_at_horizontal)
+                        
+                        wx = int(b_wrist.x * w)
+                        wy = int(b_wrist.y * h)
+                        ext_color = (0,255,0) if extension <= 15 else (0,0,255)
+                        
+                        # Print legal text overlay patterns directly inside video stream file
+                        put_label(frame, f"ICC EXTENSION: {int(extension)}\u00b0", wx + 14, wy - 30, ext_color)
+                        legal_txt = "ACTION: LEGAL" if extension <= 15 else "ACTION: ILLEGAL (THROW)"
+                        put_label(frame, legal_txt, wx + 14, wy - 6, ext_color)
+
+                        arm_reached_horizontal = False
+                        elbow_at_horizontal    = None
+                        wrist_peak_y           = None
+                        elbow_at_peak          = None
+
+                    prev_wrist_y = current_wrist_y
+
+                    # Compute standard release height score
                     ground_ref = max(l_ankle.y, r_ankle.y)
-                    rel_score  = (ground_ref - highest_wrist.y) * 100
+                    rel_score  = (ground_ref - b_wrist.y) * 100
                     release_scores.append(rel_score)
 
                 line_h = int(scale_font * 36)
@@ -207,13 +267,6 @@ def process_bowling_video(video_path, output_path, job_id):
         pose.close()
         pose = None
 
-        # Process snapshot export logic
-        snapshot_filename = None
-        if release_snapshot_frame is not None:
-            snapshot_filename = f"snapshot_{job_id}.jpg"
-            snapshot_path = os.path.join(OUTPUT_FOLDER, snapshot_filename)
-            cv2.imwrite(snapshot_path, release_snapshot_frame)
-
         reencode_for_web(raw_output, output_path)
 
         if os.path.exists(video_path):
@@ -232,7 +285,6 @@ def process_bowling_video(video_path, output_path, job_id):
             jobs[job_id] = {
                 'status': 'done',
                 'video_url': f'/static/{os.path.basename(output_path)}',
-                'snapshot_url': f'/static/{snapshot_filename}' if snapshot_filename else None,
                 'summary': summary
             }
 
@@ -280,7 +332,7 @@ def upload_video():
 
     file.save(input_path)
 
-    # Clean legacy run objects
+    # Automatically purge previous cache models
     for f in os.listdir(OUTPUT_FOLDER):
         if (f.startswith('analyzed_') or f.startswith('snapshot_')) and f != output_name:
             try: os.remove(os.path.join(OUTPUT_FOLDER, f))
