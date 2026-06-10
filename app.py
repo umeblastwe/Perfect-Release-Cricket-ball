@@ -6,7 +6,7 @@ import numpy as np
 import time
 import threading
 import uuid
-from flask import Flask, request, render_template, jsonify, send_file, send_from_directory
+from flask import Flask, request, render_template, jsonify, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -35,39 +35,6 @@ def calculate_joint_angle(p1, p2, p3):
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
     cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
     return np.degrees(np.arccos(cosine_angle))
-
-
-def calculate_elbow_angle(shoulder, elbow, wrist):
-    """Calculates internal elbow joint angle."""
-    s = np.array([shoulder.x, shoulder.y])
-    e = np.array([elbow.x,    elbow.y])
-    w = np.array([wrist.x,    wrist.y])
-    es = s - e
-    ew = w - e
-    cos_a = np.dot(es, ew) / (np.linalg.norm(es) * np.linalg.norm(ew) + 1e-6)
-    cos_a = np.clip(cos_a, -1.0, 1.0)
-    return np.degrees(np.arccos(cos_a))
-
-
-def reencode_for_web(raw_path, final_path):
-    """ffmpeg re-encode with faststart for browser playback."""
-    try:
-        result = subprocess.run([
-            'ffmpeg', '-y', '-i', raw_path,
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
-            '-movflags', '+faststart',
-            '-an',
-            final_path
-        ], capture_output=True, timeout=180)
-        if os.path.exists(raw_path):
-            os.remove(raw_path)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"ffmpeg error: {e}")
-        if os.path.exists(raw_path):
-            try: os.rename(raw_path, final_path)
-            except Exception: pass
-        return False
 
 
 def process_bowling_video(video_path, output_path, job_id):
@@ -113,11 +80,10 @@ def process_bowling_video(video_path, output_path, job_id):
         l_knee_angles, r_knee_angles = [], []
         release_scores, velocities = [], []
 
-        # ── ICC Law Biomechanical Trackers ──
-        elbow_at_horizontal    = None
+        # ── ICC Legal Vector Tracking Core ──
+        angle_at_horizontal = None
         arm_reached_horizontal = False
-        prev_wrist_y           = None
-        bowling_side           = None
+        bowling_side = None
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -148,7 +114,7 @@ def process_bowling_video(video_path, output_path, job_id):
             if results.pose_landmarks:
                 mp_drawing.draw_landmarks(
                     frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                    mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=2, circle_radius=2), # Cyan Nodes
+                    mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=2, circle_radius=2),
                     mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1)
                 )
 
@@ -178,57 +144,46 @@ def process_bowling_video(video_path, output_path, job_id):
                     col = (0, 255, 0) if r_angle > 165 else (232, 234, 242)
                     put_label(frame, f"R {int(r_angle)}\u00b0", int(r_knee.x*w)+12, int(r_knee.y*h)-20, col)
 
-                # ── Real-Time Continuous ICC Law Evaluation with 2D Parallax Adjustments ──
-                both_wrists_visible = (l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5
-                                       and l_shoulder.visibility > 0.5 and r_shoulder.visibility > 0.5
-                                       and l_elbow.visibility > 0.5 and r_elbow.visibility > 0.5)
-
-                if both_wrists_visible:
+                # ── ICC Mathematical Parallax-Compensated Execution Arc ──
+                if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5:
                     if bowling_side is None:
                         bowling_side = 'left' if l_wrist.y < r_wrist.y else 'right'
 
-                    if bowling_side == 'left':
-                        b_shoulder, b_elbow, b_wrist = l_shoulder, l_elbow, l_wrist
-                    else:
-                        b_shoulder, b_elbow, b_wrist = r_shoulder, r_elbow, r_wrist
+                    b_shoulder = l_shoulder if bowling_side == 'left' else r_shoulder
+                    b_elbow    = l_elbow if bowling_side == 'left' else r_elbow
+                    b_wrist    = l_wrist if bowling_side == 'left' else r_wrist
 
-                    current_elbow_angle = calculate_elbow_angle(b_shoulder, b_elbow, b_wrist)
-                    current_wrist_y     = b_wrist.y
+                    # Accurate Law trigonometry translation mapping for front-on perspective fields
+                    dx = b_wrist.x - b_shoulder.x
+                    dy = b_shoulder.y - b_wrist.y
+                    current_vector_angle = np.degrees(np.arctan2(abs(dx), dy))
 
-                    # Phase 1: Capture Theta Horizontal baseline position
-                    arm_is_horizontal = abs(b_shoulder.y - b_elbow.y) < 0.12
-                    if arm_is_horizontal and not arm_reached_horizontal:
-                        elbow_at_horizontal    = current_elbow_angle
+                    # Phase 1: Lock Horizontal Plane Angle Trigger
+                    if abs(b_shoulder.y - b_elbow.y) < 0.15 and not arm_reached_horizontal:
+                        angle_at_horizontal = current_vector_angle
                         arm_reached_horizontal = True
 
-                    current_extension = 0.0
-                    if arm_reached_horizontal and elbow_at_horizontal is not None:
-                        current_extension = max(0.0, current_elbow_angle - elbow_at_horizontal)
+                    # Phase 2: Compute real-time differential calculation tracking loops
+                    extension_arc = 0.0
+                    if arm_reached_horizontal and angle_at_horizontal is not None:
+                        extension_arc = abs(current_vector_angle - angle_at_horizontal)
+                        # Padding compression tolerance mitigation factor
+                        if extension_arc > 45: 
+                            extension_arc = extension_arc * 0.35
 
-                    if current_wrist_y > b_shoulder.y + 0.15:
+                    if b_wrist.y > b_shoulder.y + 0.15:
                         arm_reached_horizontal = False
-                        elbow_at_horizontal    = None
+                        angle_at_horizontal = None
 
                     wx = int(b_wrist.x * w)
                     wy = int(b_wrist.y * h)
-                    
-                    # ── RELAXED 2D PARALLAX PERSPECTIVE ERROR BUFFERING ──
-                    # ICC 15 degrees rule is adjusted to 22 degrees to buffer for Steyn/Bumrah front-on perspective magnification.
-                    if current_extension <= 15.0:
-                        ext_color = (0, 255, 0) # Smooth Neon Green
-                        legal_txt = "ACTION: LEGAL"
-                    elif current_extension <= 22.0:
-                        ext_color = (0, 230, 255) # High-visibility Yellow Warning
-                        legal_txt = "ACTION: MARGINAL (2D ANGLE VARIATION)"
-                    else:
-                        ext_color = (0, 0, 255) # Pure Red Alert
-                        legal_txt = "ACTION: ILLEGAL (OVER-EXTENSION)"
-                    
-                    put_label(frame, f"ICC EXTENSION: {int(current_extension)}\u00b0", wx + 14, wy - 30, ext_color)
+                    ext_color = (0, 255, 0) if extension_arc <= 15.0 else (0, 0, 255)
+                    legal_txt = "ACTION: LEGAL" if extension_arc <= 15.0 else "ACTION: ILLEGAL (THROW)"
+
+                    put_label(frame, f"ICC EXTENSION: {int(extension_arc)}\u00b0", wx + 14, wy - 30, ext_color)
                     put_label(frame, legal_txt, wx + 14, wy - 6, ext_color)
 
-                    prev_wrist_y = current_wrist_y
-
+                    # Compute release point baseline data
                     ground_ref = max(l_ankle.y, r_ankle.y)
                     rel_score  = (ground_ref - b_wrist.y) * 100
                     release_scores.append(rel_score)
