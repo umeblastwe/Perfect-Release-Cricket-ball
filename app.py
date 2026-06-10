@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import os
-import math
 import uuid
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -12,9 +11,9 @@ app = Flask(__name__)
 CORS(app)
 
 UPLOAD_FOLDER = 'uploads'
-PROCESSED_FOLDER = 'processed'
+STATIC_OUTPUT_FOLDER = 'static'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+os.makedirs(STATIC_OUTPUT_FOLDER, exist_ok=True)
 
 mp_pose = mp.solutions.pose
 
@@ -52,7 +51,7 @@ def process_bowling_video(video_path, output_path):
     max_elbow_extension = 0
     min_elbow_angle = 180
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0) as pose:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -62,14 +61,11 @@ def process_bowling_video(video_path, output_path):
             results = pose.process(rgb_frame)
 
             status_text = "ACTION: LEGAL"
-            status_color = (0, 255, 0) # Neon Green
+            status_color = (0, 255, 0) 
 
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
-                
-                # Get coordinates
                 try:
-                    # Shoulder, Elbow, Wrist for Action Legality (Right side example)
                     shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x * width,
                                 landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y * height]
                     elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x * width,
@@ -79,25 +75,21 @@ def process_bowling_video(video_path, output_path):
                     
                     elbow_angle = calculate_angle(shoulder, elbow, wrist)
                     
-                    # Track minimum arm flex point during back foot contact to release window
                     if elbow_angle < min_elbow_angle and elbow_angle > 60:
                         min_elbow_angle = elbow_angle
                     
-                    # Track dynamic extension arc
-                    current_extension = elbow_angle - min_elbow_angle
+                    current_extension = max(0.0, elbow_angle - min_elbow_angle)
                     if current_extension > max_elbow_extension:
                         max_elbow_extension = current_extension
 
-                    # ICC 15-degree rule relaxed threshold for 2D perspective error limit
-                    # 22 degrees instead of 15 limits false-positives under forced camera compression angles
+                    # 2D perspective error padding threshold relaxation
                     if max_elbow_extension > 22.0:
                         status_text = "ACTION: ILLEGAL (2D OVER-EXTENSION)"
-                        status_color = (0, 0, 255) # Pure Red
+                        status_color = (0, 0, 255) 
                     elif max_elbow_extension > 15.0:
                         status_text = "ACTION: MARGINAL (2D ANGLE WARNING)"
-                        status_color = (0, 230, 255) # High-vis Yellow
+                        status_color = (0, 230, 255) 
 
-                    # Knee Landmarks
                     l_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
                     l_knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
                     l_ankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
@@ -112,11 +104,9 @@ def process_bowling_video(video_path, output_path):
                     left_knee_angles.append(lk)
                     right_knee_angles.append(rk)
 
-                    # Release Height Logic (Wrist relative to Ankle baseline)
                     rel_score = (l_ankle[1] - landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y) * 100
                     release_scores.append(rel_score)
 
-                    # Run-up Strides & Velocity math tracker
                     current_hip_y = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y
                     if prev_hip_y is not None:
                         diff = current_hip_y - prev_hip_y
@@ -128,15 +118,13 @@ def process_bowling_video(video_path, output_path):
                             stride_state = "up"
                     prev_hip_y = current_hip_y
 
-                    # Draw Clean, High-Contrast Overlays
-                    # Dynamic box for analytics status
+                    # Transparent HUD card background mask overlay
                     cv2.rectangle(frame, (20, 20), (520, 95), (15, 18, 24), -1)
-                    cv2.rectangle(frame, (20, 20), (520, 95), (0, 242, 254), 2) # Cyan Border
+                    cv2.rectangle(frame, (20, 20), (520, 95), (0, 242, 254), 2) 
                     
                     cv2.putText(frame, status_text, (35, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.75, status_color, 2)
                     cv2.putText(frame, f"Est. Extension Arc: {max_elbow_extension:.1f} deg", (35, 82), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (232, 234, 242), 1)
 
-                    # Draw key joint points
                     for joint in [mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST]:
                         cx = int(landmarks[joint.value].x * width)
                         cy = int(landmarks[joint.value].y * height)
@@ -150,7 +138,9 @@ def process_bowling_video(video_path, output_path):
         cap.release()
         out.release()
 
-    # Final safe summary statistics compiler
+    try: os.remove(video_path)
+    except Exception: pass
+
     avg_l_knee = round(np.mean(left_knee_angles)) if left_knee_angles else 165
     avg_r_knee = round(np.mean(right_knee_angles)) if right_knee_angles else 162
     avg_rel = round(np.max(release_scores)) if release_scores else 28
@@ -173,27 +163,28 @@ def upload_video():
     if file.filename == '':
         return jsonify({"error": "Empty filename file segment"}), 400
 
-    job_id = str(uuid.uuid4())
-    input_filename = f"{job_id}_{secure_filename(file.filename)}"
+    job_id = str(uuid.uuid4())[:8]
+    input_filename = f"in_{job_id}.mp4"
     output_filename = f"out_{job_id}.mp4"
     
     input_path = os.path.join(UPLOAD_FOLDER, input_filename)
-    output_path = os.path.join(PROCESSED_FOLDER, output_filename)
+    output_path = os.path.join(STATIC_OUTPUT_FOLDER, output_filename)
     
     file.save(input_path)
     
-    # Process synchronously to avoid background thread context dropping bugs
+    # Run the core computing layout structure arrays block sequential processing
     summary_data = process_bowling_video(input_path, output_path)
     
     return jsonify({
         "status": "done",
-        "video_url": f"/stream/{output_filename}",
+        "video_url": f"/static/{output_filename}",
         "summary": summary_data
     })
 
-@app.route('/stream/<filename>')
-def stream_video(filename):
-    return send_from_directory(PROCESSED_FOLDER, filename)
+@app.route('/static/<filename>')
+def serve_processed_video(filename):
+    return send_from_directory(STATIC_OUTPUT_FOLDER, filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
