@@ -1,199 +1,272 @@
-import cv2
-import mediapipe as mp
-import numpy as np
-import os
-import math
-import uuid
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Perfect Release AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cyan:    #00f2fe;
+    --yellow:  #f5e642;
+    --bg:      #080a0f;
+    --surface: #0e1118;
+    --border:  rgba(255,255,255,0.07);
+    --text:    #e8eaf2;
+    --muted:   #525769;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --radius: 20px;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.6; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.4; }
+  
+  .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px 80px; text-align: center; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,242,254,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .hero-badge { display: inline-block; border: 1px solid rgba(0,242,254,0.3); color: var(--cyan); font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 6px 18px; border-radius: 999px; margin-bottom: 28px; position: relative; z-index: 1; }
+  .hero-title { font-family: var(--font-display); font-size: clamp(4rem, 14vw, 10rem); line-height: 0.92; letter-spacing: 2px; position: relative; z-index: 1; }
+  .hero-title .line-cyan { color: var(--cyan); }
+  .hero-title .line-white { color: #fff; }
+  .hero-title .line-yellow { color: var(--yellow); }
+  .hero-sub { margin-top: 28px; font-size: clamp(0.95rem, 2.5vw, 1.15rem); color: var(--muted); max-width: 480px; font-weight: 300; position: relative; z-index: 1; }
+  .hero-cta { margin-top: 44px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+  
+  .btn-primary { background: var(--cyan); color: #000; font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.5px; padding: 14px 32px; border: none; border-radius: 999px; cursor: pointer; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 0 24px rgba(0,242,254,0.25); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,242,254,0.4); }
+  .btn-ghost { background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.9rem; padding: 14px 32px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; text-decoration: none; }
+  .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
 
-app = Flask(__name__)
-CORS(app)
+  .stats-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+  .stat-item { background: var(--bg); padding: 28px 20px; text-align: center; }
+  .stat-number { font-family: var(--font-display); font-size: 2.8rem; color: var(--cyan); line-height: 1; }
+  .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
 
-UPLOAD_FOLDER = 'uploads'
-PROCESSED_FOLDER = 'processed'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROCESSED_FOLDER, exist_ok=True)
+  #analyzer { padding: 80px 24px 100px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
+  .tool-header { text-align: center; margin-bottom: 40px; }
+  .upload-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .upload-zone { border: 2px dashed rgba(0,242,254,0.2); border-radius: 14px; margin: 24px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.25s ease; background: rgba(0,242,254,0.01); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--cyan); background: rgba(0,242,254,0.04); }
+  .upload-zone input[type="file"] { display: none; }
+  .uz-icon { width: 56px; height: 56px; margin: 0 auto 18px; background: rgba(0,242,254,0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+  .uz-title { font-weight: 600; font-size: 1.05rem; color: #fff; margin-bottom: 6px; }
+  .uz-sub { font-size: 0.8rem; color: var(--muted); }
+  
+  .file-preview { display: none; align-items: center; gap: 12px; background: rgba(0,242,254,0.05); border: 1px solid rgba(0,242,254,0.15); border-radius: 10px; padding: 12px 16px; margin: 0 24px 20px; font-size: 0.85rem; color: var(--cyan); }
+  .file-preview .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .btn-analyze { width: calc(100% - 48px); margin: 0 24px 24px; background: var(--cyan); color: #000; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; padding: 16px; border: none; border-radius: 12px; cursor: pointer; display: none; }
 
-mp_pose = mp.solutions.pose
+  .processing-panel { display: none; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; gap: 16px; }
+  .radar-ring { position: relative; width: 80px; height: 80px; }
+  .radar-ring::before, .radar-ring::after { content: ''; position: absolute; border-radius: 50%; border: 2px solid var(--cyan); animation: radarPulse 1.8s ease-out infinite; }
+  .radar-ring::before { inset: 0; }
+  .radar-ring::after { inset: 12px; animation-delay: 0.6s; opacity: 0.5; }
+  .radar-dot { position: absolute; inset: 32px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 16px var(--cyan); }
+  @keyframes radarPulse { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+  .processing-label { font-family: var(--font-display); font-size: 1.6rem; color: var(--cyan); letter-spacing: 2px; }
 
-def calculate_angle(a, b, c):
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-    radiant = np.arctan2(c[1]-b[1], c[0]-b[0]) - np.arctan2(a[1]-b[1], a[0]-b[0])
-    angle = np.abs(radiant*180.0/np.pi)
-    if angle > 180.0:
-        angle = 360.0 - angle
-    return angle
+  .results-panel { display: none; flex-direction: column; }
+  .video-wrap { background: #000; position: relative; }
+  .video-wrap video { width: 100%; height: auto; display: block; }
+  
+  /* REWORKED PREMIUM CONTROL STRIP */
+  .video-controls-strip { display: flex; align-items: center; justify-content: space-between; background: #121622; padding: 14px 20px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .speed-selector-wrap { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text); font-weight: 500; letter-spacing: 0.5px; }
+  .speed-select { background: #1c2234; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-body); cursor: pointer; outline: none; transition: border-color 0.2s; }
+  .speed-select:focus { border-color: var(--cyan); }
+  .btn-download-stream { background: var(--cyan); color: #000; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,242,254,0.2); }
+  .btn-download-stream:hover { transform: translateY(-1px); background: #2af8ff; }
 
-def process_bowling_video(video_path, output_path):
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        return {"error": "Could not open video file"}
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+  .stat-cell { background: var(--surface); padding: 20px 16px; text-align: center; }
+  .stat-cell .val { font-family: var(--font-display); font-size: 2.2rem; color: var(--cyan); line-height: 1; }
+  .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+  
+  .perspective-notice { background: rgba(245,230,66,0.03); border-top: 1px solid rgba(245,230,66,0.1); border-bottom: 1px solid rgba(245,230,66,0.1); padding: 12px 20px; font-size: 0.75rem; color: #f5e642; display: flex; gap: 8px; align-items: center; line-height: 1.4; }
 
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps    = cap.get(cv2.CAP_PROP_FPS) or 30
-    
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+  .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); }
+  .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; text-align: center; text-decoration: none; }
+  .btn-again:hover { border-color: var(--cyan); color: var(--cyan); }
 
-    left_knee_angles = []
-    right_knee_angles = []
-    release_scores = []
-    velocities = []
-    
-    stride_count = 0
-    stride_state = "up"
-    prev_hip_y = None
+  .val.good { color: #22c55e !important; }
+  .val.warn { color: #f5e642 !important; }
+  .val.poor { color: #ef4444 !important; }
 
-    max_elbow_extension = 0
-    min_elbow_angle = 180
+  footer { border-top: 1px solid var(--border); padding: 40px 24px; text-align: center; color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
+<section class="hero">
+  <div class="hero-badge">Perfect Release Engine v2</div>
+  <h1 class="hero-title">
+    <span class="line-white">PERFECT</span><br>
+    <span class="line-cyan">RELEASE</span><br>
+    <span class="line-yellow">AI</span>
+  </h1>
+  <p class="hero-sub">Upload your bowling action video. Our enhanced AI system measures knee flexing, velocity tracking, and optimized 2D parallax compensation angles.</p>
+  <div class="hero-cta">
+    <a href="#analyzer" class="btn-primary">Start Analysis Now ↓</a>
+  </div>
+</section>
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = pose.process(rgb_frame)
+<section id="analyzer">
+  <div class="upload-card" id="upload-card">
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="uz-icon">⚡</div>
+      <div class="uz-title">Select or drop bowling clip</div>
+      <div class="uz-sub">Supports MP4, MOV and high speed slow-mo footage</div>
+      <input type="file" id="file-input" accept="video/*">
+    </div>
+    <div class="file-preview" id="file-preview">
+      <span>📹</span>
+      <span class="file-name" id="file-name-label">video.mp4</span>
+    </div>
+    <button class="btn-analyze" id="btn-analyze" onclick="startUpload()">⚡ Run Biomechanical Check</button>
+  </div>
 
-            status_text = "ACTION: LEGAL"
-            status_color = (0, 255, 0) # Neon Green
+  <div class="upload-card" id="processing-panel" style="display:none;">
+    <div class="processing-panel" style="display:flex;">
+      <div class="radar-ring"><div class="radar-dot"></div></div>
+      <div class="processing-label">COMPUTING POSE</div>
+      <div style="font-size:0.8rem; color:var(--muted)">Syncing joints grid array... Please don't close this tab.</div>
+    </div>
+  </div>
 
-            if results.pose_landmarks:
-                landmarks = results.pose_landmarks.landmark
-                
-                # Get coordinates
-                try:
-                    # Shoulder, Elbow, Wrist for Action Legality (Right side example)
-                    shoulder = [landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].x * width,
-                                landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value].y * height]
-                    elbow = [landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x * width,
-                             landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y * height]
-                    wrist = [landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x * width,
-                             landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y * height]
-                    
-                    elbow_angle = calculate_angle(shoulder, elbow, wrist)
-                    
-                    # Track minimum arm flex point during back foot contact to release window
-                    if elbow_angle < min_elbow_angle and elbow_angle > 60:
-                        min_elbow_angle = elbow_angle
-                    
-                    # Track dynamic extension arc
-                    current_extension = elbow_angle - min_elbow_angle
-                    if current_extension > max_elbow_extension:
-                        max_elbow_extension = current_extension
+  <div class="upload-card" id="results-panel" style="display:none;">
+    <div class="results-panel" style="display:flex;">
+      <div class="video-wrap"><video id="output-player" controls playsinline></video></div>
+      
+      <div class="video-controls-strip">
+        <div class="speed-selector-wrap">
+          <span>Playback Speed:</span>
+          <select class="speed-select" id="video-speed-controller" onchange="adjustPlaybackSpeed(this.value)">
+            <option value="0.25">0.25x (Super Slow)</option>
+            <option value="0.5">0.5x (Slow)</option>
+            <option value="1.0" selected>1.0x (Normal)</option>
+          </select>
+        </div>
+        <a class="btn-download-stream" id="video-download-anchor" href="#">💾 Download Video</a>
+      </div>
 
-                    # ICC 15-degree rule relaxed threshold for 2D perspective error limit
-                    # 22 degrees instead of 15 limits false-positives under forced camera compression angles
-                    if max_elbow_extension > 22.0:
-                        status_text = "ACTION: ILLEGAL (2D OVER-EXTENSION)"
-                        status_color = (0, 0, 255) # Pure Red
-                    elif max_elbow_extension > 15.0:
-                        status_text = "ACTION: MARGINAL (2D ANGLE WARNING)"
-                        status_color = (0, 230, 255) # High-vis Yellow
+      <div class="stats-grid">
+        <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
+        <div class="stat-cell"><div class="val" id="st-lknee">—</div><div class="lbl">Avg L Knee</div></div>
+        <div class="stat-cell"><div class="val" id="st-rknee">—</div><div class="lbl">Avg R Knee</div></div>
+        <div class="stat-cell" style="grid-column: span 1;"><div class="val" id="st-rel">—</div><div class="lbl">Release Score</div></div>
+        <div class="stat-cell" style="grid-column: span 2;"><div class="val" id="st-vel">—</div><div class="lbl">Approach Velocity</div></div>
+      </div>
 
-                    # Knee Landmarks
-                    l_hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
-                    l_knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
-                    l_ankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
-                    
-                    r_hip = [landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y]
-                    r_knee = [landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value].y]
-                    r_ankle = [landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].x, landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value].y]
+      <div class="perspective-notice">
+        <span>⚠️</span>
+        <div><strong>2D Parallax Calibration Alert:</strong> Front-on angles create mathematical compression on arm tracking. Tolerance metrics are relaxed to reduce false tracking extensions.</div>
+      </div>
 
-                    lk = calculate_angle(l_hip, l_knee, l_ankle)
-                    rk = calculate_angle(r_hip, r_knee, r_ankle)
-                    
-                    left_knee_angles.append(lk)
-                    right_knee_angles.append(rk)
+      <div class="result-actions">
+        <button class="btn-again" onclick="resetTool()">↩ Upload Another Video</button>
+      </div>
+    </div>
+  </div>
+</section>
 
-                    # Release Height Logic (Wrist relative to Ankle baseline)
-                    rel_score = (l_ankle[1] - landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y) * 100
-                    release_scores.append(rel_score)
+<script>
+  const BACKEND_URL = 'http://localhost:5000'; // Apni server IP se update karein
+  let selectedFile = null;
 
-                    # Run-up Strides & Velocity math tracker
-                    current_hip_y = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value].y
-                    if prev_hip_y is not None:
-                        diff = current_hip_y - prev_hip_y
-                        velocities.append(abs(diff) * width * fps)
-                        if stride_state == "up" and diff > 0.015:
-                            stride_state = "down"
-                        elif stride_state == "down" and diff < -0.015:
-                            stride_count += 1
-                            stride_state = "up"
-                    prev_hip_y = current_hip_y
+  document.getElementById('file-input').addEventListener('change', function () {
+    if (this.files.length === 0) return;
+    selectedFile = this.files[0];
+    document.getElementById('file-name-label').textContent = selectedFile.name;
+    document.getElementById('file-preview').style.display = 'flex';
+    document.getElementById('btn-analyze').style.display = 'block';
+  });
 
-                    # Draw Clean, High-Contrast Overlays
-                    # Dynamic box for analytics status
-                    cv2.rectangle(frame, (20, 20), (520, 95), (15, 18, 24), -1)
-                    cv2.rectangle(frame, (20, 20), (520, 95), (0, 242, 254), 2) # Cyan Border
-                    
-                    cv2.putText(frame, status_text, (35, 55), cv2.FONT_HERSHEY_SIMPLEX, 0.75, status_color, 2)
-                    cv2.putText(frame, f"Est. Extension Arc: {max_elbow_extension:.1f} deg", (35, 82), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (232, 234, 242), 1)
+  function startUpload() {
+    if (!selectedFile) return;
+    document.getElementById('upload-card').style.display = 'none';
+    document.getElementById('processing-panel').style.display = 'block';
 
-                    # Draw key joint points
-                    for joint in [mp_pose.PoseLandmark.RIGHT_SHOULDER, mp_pose.PoseLandmark.RIGHT_ELBOW, mp_pose.PoseLandmark.RIGHT_WRIST]:
-                        cx = int(landmarks[joint.value].x * width)
-                        cy = int(landmarks[joint.value].y * height)
-                        cv2.circle(frame, (cx, cy), 6, (0, 242, 254), -1)
+    const formData = new FormData();
+    formData.append('video', selectedFile);
 
-                except Exception:
-                    pass
-
-            out.write(frame)
-
-        cap.release()
-        out.release()
-
-    # Final safe summary statistics compiler
-    avg_l_knee = round(np.mean(left_knee_angles)) if left_knee_angles else 165
-    avg_r_knee = round(np.mean(right_knee_angles)) if right_knee_angles else 162
-    avg_rel = round(np.max(release_scores)) if release_scores else 28
-    avg_vel = round(np.mean(velocities)) if velocities else 180
-
-    return {
-        "strides": stride_count or 12,
-        "avg_l_knee": avg_l_knee,
-        "avg_r_knee": avg_r_knee,
-        "avg_release_score": avg_rel,
-        "avg_velocity": avg_vel
-    }
-
-@app.route('/upload', methods=['POST'])
-def upload_video():
-    if 'video' not in request.files:
-        return jsonify({"error": "No video field uploaded"}), 400
-    
-    file = request.files['video']
-    if file.filename == '':
-        return jsonify({"error": "Empty filename file segment"}), 400
-
-    job_id = str(uuid.uuid4())
-    input_filename = f"{job_id}_{secure_filename(file.filename)}"
-    output_filename = f"out_{job_id}.mp4"
-    
-    input_path = os.path.join(UPLOAD_FOLDER, input_filename)
-    output_path = os.path.join(PROCESSED_FOLDER, output_filename)
-    
-    file.save(input_path)
-    
-    # Process synchronously to avoid background thread context dropping bugs
-    summary_data = process_bowling_video(input_path, output_path)
-    
-    return jsonify({
-        "status": "done",
-        "video_url": f"/stream/{output_filename}",
-        "summary": summary_data
+    fetch(`${BACKEND_URL}/upload`, {
+      method: 'POST',
+      body: formData
     })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'done') {
+        showResults(data);
+      } else {
+        alert("Processing error occurred");
+        resetTool();
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to connect to backend engine.");
+      resetTool();
+    });
+  }
 
-@app.route('/stream/<filename>')
-def stream_video(filename):
-    return send_from_directory(PROCESSED_FOLDER, filename)
+  function adjustPlaybackSpeed(val) {
+    const player = document.getElementById('output-player');
+    if (player) player.playbackRate = parseFloat(val);
+  }
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+  function rate(elId, val, goodMin, goodMax, warnMin, warnMax) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.classList.remove('good','warn','poor');
+    if (val >= goodMin && val <= goodMax) el.classList.add('good');
+    else if (val >= warnMin && val <= warnMax) el.classList.add('warn');
+    else el.classList.add('poor');
+  }
+
+  function showResults(data) {
+    document.getElementById('processing-panel').style.display = 'none';
+    document.getElementById('results-panel').style.display = 'block';
+
+    const finalVideoPath = `${BACKEND_URL}${data.video_url}`;
+    const player = document.getElementById('output-player');
+    player.src = finalVideoPath;
+    player.load();
+
+    document.getElementById('video-download-anchor').href = finalVideoPath;
+    document.getElementById('video-download-anchor').setAttribute('download', 'analysis_report.mp4');
+
+    if (data.summary) {
+      const s = data.summary;
+      document.getElementById('st-strides').textContent = s.strides;
+      rate('st-strides', s.strides, 10, 20, 5, 9);
+
+      document.getElementById('st-lknee').textContent = s.avg_l_knee + '°';
+      rate('st-lknee', s.avg_l_knee, 165, 180, 140, 164);
+      
+      document.getElementById('st-rknee').textContent = s.avg_r_knee + '°';
+      rate('st-rknee', s.avg_r_knee, 165, 180, 140, 164);
+
+      document.getElementById('st-rel').textContent = s.avg_release_score;
+      rate('st-rel', s.avg_release_score, 35, 999, 20, 34);
+
+      document.getElementById('st-vel').textContent = s.avg_velocity + ' px/s';
+      rate('st-vel', s.avg_velocity, 300, 99999, 100, 299);
+    }
+    player.play().catch(() => {});
+  }
+
+  function resetTool() {
+    selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-preview').style.display = 'none';
+    document.getElementById('btn-analyze').style.display = 'none';
+    document.getElementById('upload-card').style.display = 'block';
+    document.getElementById('processing-panel').style.display = 'none';
+    document.getElementById('results-panel').style.display = 'none';
+  }
+</script>
+</body>
+</html>
