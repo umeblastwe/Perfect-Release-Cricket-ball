@@ -198,7 +198,274 @@
     <h2 class="section-title">How to shoot your video</h2>
     <p class="section-body" style="margin:0 auto;">Camera angle directly affects analysis accuracy. Pick the view that matches your setup and film it right first time.</p>
   </div>
-  <!-- paste the full widget HTML here -->
+  
+
+<style>
+  h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .cam-section{padding:0;font-family:var(--font-sans)}
+  .cam-header{margin-bottom:20px}
+  .cam-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+  .cam-tab{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 16px;font-size:13px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;transition:all .18s}
+  .cam-tab:hover{border-color:var(--color-border-secondary);color:var(--color-text-primary)}
+  .cam-tab.active{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+  .cam-panels{}
+  .cam-panel{display:none}
+  .cam-panel.active{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.cam-panel.active{grid-template-columns:1fr}}
+  .cam-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+  .cam-card.best{border:1.5px solid var(--color-border-success)}
+  .cam-card.good{border:1px solid var(--color-border-info)}
+  .cam-card.avoid{border:0.5px solid var(--color-border-danger);opacity:.85}
+  .badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;margin-bottom:8px}
+  .badge-best{background:var(--color-background-success);color:var(--color-text-success)}
+  .badge-good{background:var(--color-background-info);color:var(--color-text-info)}
+  .badge-avoid{background:var(--color-background-danger);color:var(--color-text-danger)}
+  .cam-label{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+  .cam-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.55}
+  .cam-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+  .tips-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px;margin-top:16px;font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+  .tips-box strong{color:var(--color-text-primary)}
+  .tip-row{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
+  .tip-icon{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:var(--color-background-info);display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .tip-icon i{font-size:11px;color:var(--color-text-info)}
+</style>
+
+<h2 class="sr-only">Camera angle guide for bowling video analysis — shows best, acceptable, and angles to avoid for each view type</h2>
+
+<div class="cam-section">
+  <div class="cam-tabs">
+    <button class="cam-tab active" onclick="switchTab('side')">Side-on view</button>
+    <button class="cam-tab" onclick="switchTab('back')">Behind the bowler</button>
+    <button class="cam-tab" onclick="switchTab('front')">Front-on view</button>
+  </div>
+
+  <!-- SIDE-ON -->
+  <div class="cam-panel active" id="panel-side">
+
+    <div class="cam-card best">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+        <!-- pitch -->
+        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
+        <!-- bowler stick figure -->
+        <circle cx="230" cy="80" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="230" y1="89" x2="230" y2="130" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="230" y1="105" x2="215" y2="95" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="230" y1="105" x2="252" y2="90" stroke="#3B8BD4" stroke-width="2.5"/>
+        <line x1="230" y1="130" x2="218" y2="148" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="230" y1="130" x2="244" y2="150" stroke="#3B8BD4" stroke-width="2"/>
+        <!-- camera icon -->
+        <rect x="20" y="94" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
+        <circle cx="37" cy="105" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
+        <circle cx="37" cy="105" r="2.5" fill="#888"/>
+        <rect x="27" y="90" width="10" height="5" rx="2" fill="#888"/>
+        <!-- fov cone -->
+        <path d="M54 105 L100 76 L100 134 Z" fill="#3B8BD4" opacity=".08"/>
+        <line x1="54" y1="105" x2="260" y2="76" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <line x1="54" y1="105" x2="260" y2="134" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <!-- height label -->
+        <line x1="285" y1="70" x2="285" y2="148" stroke="#888" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="278" y1="70" x2="292" y2="70" stroke="#888" stroke-width="1"/>
+        <line x1="278" y1="148" x2="292" y2="148" stroke="#888" stroke-width="1"/>
+        <text x="300" y="112" font-size="10" fill="#888" dominant-baseline="central" font-family="sans-serif">hip</text>
+        <text x="300" y="125" font-size="10" fill="#888" dominant-baseline="central" font-family="sans-serif">ht</text>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-best">Best</div>
+        <div class="cam-label">True side-on (90°)</div>
+        <div class="cam-desc">Camera placed directly perpendicular to the bowling crease. Captures the full action plane — run-up, delivery stride, arm swing, and follow-through all visible in one frame.</div>
+        <div class="cam-meta">
+          <span class="chip">Knee angles accurate</span>
+          <span class="chip">Full stride visible</span>
+          <span class="chip">Release height clear</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cam-card good">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
+        <circle cx="220" cy="82" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="220" y1="91" x2="222" y2="130" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="222" y1="108" x2="207" y2="98" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="222" y1="108" x2="244" y2="94" stroke="#3B8BD4" stroke-width="2.5"/>
+        <line x1="222" y1="130" x2="210" y2="150" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="222" y1="130" x2="236" y2="152" stroke="#3B8BD4" stroke-width="2"/>
+        <!-- camera at 45deg -->
+        <rect x="30" y="54" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5" transform="rotate(-30 47 65)"/>
+        <circle cx="47" cy="65" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
+        <circle cx="47" cy="65" r="2.5" fill="#888"/>
+        <!-- fov -->
+        <path d="M60 78 L140 55 L140 120 Z" fill="#3B8BD4" opacity=".07"/>
+        <line x1="60" y1="78" x2="255" y2="58" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".35"/>
+        <line x1="60" y1="78" x2="255" y2="128" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".35"/>
+        <!-- angle arc -->
+        <path d="M 90 128 A 30 30 0 0 1 112 106" fill="none" stroke="#f5a623" stroke-width="1.5"/>
+        <text x="106" y="136" font-size="10" fill="#f5a623" font-family="sans-serif">~45°</text>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-good">Acceptable</div>
+        <div class="cam-label">Diagonal (30–60°)</div>
+        <div class="cam-desc">A 30–60° angle off the crease line. Slightly inflates depth perception — elbow extension readings may be marginally higher. The AI calibrates for this.</div>
+        <div class="cam-meta">
+          <span class="chip">Knee angles ~ok</span>
+          <span class="chip">Some parallax</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BEHIND -->
+  <div class="cam-panel" id="panel-back">
+
+    <div class="cam-card best">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <!-- top-down schematic -->
+        <!-- pitch from above -->
+        <rect x="130" y="30" width="60" height="150" rx="4" fill="#7DB87D" opacity=".2"/>
+        <!-- crease line -->
+        <line x1="110" y1="145" x2="210" y2="145" stroke="#888" stroke-width="1" stroke-dasharray="5 3"/>
+        <text x="212" y="148" font-size="9" fill="#888" font-family="sans-serif" dominant-baseline="central">crease</text>
+        <!-- bowler from above (oval) -->
+        <ellipse cx="160" cy="115" rx="8" ry="11" fill="#3B8BD4" opacity=".7"/>
+        <!-- run-up arrow -->
+        <line x1="160" y1="38" x2="160" y2="100" stroke="#3B8BD4" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a2)" opacity=".5"/>
+        <!-- camera behind -->
+        <rect x="143" y="162" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
+        <circle cx="160" cy="173" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
+        <circle cx="160" cy="173" r="2.5" fill="#888"/>
+        <!-- fov lines -->
+        <line x1="160" y1="162" x2="120" y2="40" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
+        <line x1="160" y1="162" x2="200" y2="40" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
+        <!-- optimal label -->
+        <text x="160" y="20" font-size="10" fill="#3B8BD4" text-anchor="middle" font-family="sans-serif">Stumps direction</text>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-best">Best</div>
+        <div class="cam-label">Directly behind (0°)</div>
+        <div class="cam-desc">Camera placed directly behind the bowler along the pitch axis. Best view for elbow extension tracking — the arm swing is fully in the sagittal plane relative to the lens.</div>
+        <div class="cam-meta">
+          <span class="chip">Elbow angle accurate</span>
+          <span class="chip">Side body visible</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cam-card avoid">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <rect x="130" y="30" width="60" height="150" rx="4" fill="#7DB87D" opacity=".2"/>
+        <line x1="110" y1="145" x2="210" y2="145" stroke="#888" stroke-width="1" stroke-dasharray="5 3"/>
+        <ellipse cx="160" cy="115" rx="8" ry="11" fill="#3B8BD4" opacity=".7"/>
+        <line x1="160" y1="38" x2="160" y2="100" stroke="#3B8BD4" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a2)" opacity=".5"/>
+        <!-- camera far left (front-on) -->
+        <rect x="60" y="106" width="34" height="22" rx="4" fill="none" stroke="#E24B4A" stroke-width="1.5"/>
+        <circle cx="77" cy="117" r="6" fill="none" stroke="#E24B4A" stroke-width="1.2"/>
+        <circle cx="77" cy="117" r="2.5" fill="#E24B4A"/>
+        <!-- fov lines -->
+        <line x1="94" y1="117" x2="260" y2="78" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <line x1="94" y1="117" x2="260" y2="156" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <!-- X mark -->
+        <text x="77" y="82" font-size="20" fill="#E24B4A" text-anchor="middle" font-family="sans-serif">✕</text>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-avoid">Avoid</div>
+        <div class="cam-label">Side-on (90° offset)</div>
+        <div class="cam-desc">Camera to the side when using "behind" analysis mode. The bowling arm appears foreshortened — elbow extension readings become unreliable and stride depth is lost.</div>
+        <div class="cam-meta">
+          <span class="chip">Foreshortening</span>
+          <span class="chip">Arm depth lost</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRONT -->
+  <div class="cam-panel" id="panel-front">
+
+    <div class="cam-card good">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
+        <!-- bowler front-facing -->
+        <circle cx="160" cy="72" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="81" x2="160" y2="128" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="100" x2="135" y2="88" stroke="#3B8BD4" stroke-width="2.5"/>
+        <line x1="160" y1="100" x2="185" y2="92" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="128" x2="148" y2="150" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="128" x2="172" y2="152" stroke="#3B8BD4" stroke-width="2"/>
+        <!-- camera front -->
+        <rect x="143" y="162" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
+        <circle cx="160" cy="173" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
+        <circle cx="160" cy="173" r="2.5" fill="#888"/>
+        <!-- fov -->
+        <line x1="160" y1="162" x2="80" y2="60" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
+        <line x1="160" y1="162" x2="240" y2="60" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-good">Acceptable</div>
+        <div class="cam-label">Front-on (facing you)</div>
+        <div class="cam-desc">Camera positioned at the batting end. Great for viewing chest-on vs side-on action and shoulder alignment. Elbow extension has known parallax — the AI applies front-on calibration automatically.</div>
+        <div class="cam-meta">
+          <span class="chip">Shoulder angle clear</span>
+          <span class="chip">Parallax notice shown</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cam-card avoid">
+      <svg width="100%" viewBox="0 0 320 200" style="display:block">
+        <!-- low angle poor -->
+        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
+        <circle cx="160" cy="72" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="81" x2="160" y2="128" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="100" x2="135" y2="88" stroke="#3B8BD4" stroke-width="2.5"/>
+        <line x1="160" y1="100" x2="185" y2="92" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="128" x2="148" y2="150" stroke="#3B8BD4" stroke-width="2"/>
+        <line x1="160" y1="128" x2="172" y2="152" stroke="#3B8BD4" stroke-width="2"/>
+        <!-- camera very low / ground level -->
+        <rect x="143" y="183" width="34" height="14" rx="3" fill="none" stroke="#E24B4A" stroke-width="1.5"/>
+        <circle cx="160" cy="190" r="4" fill="none" stroke="#E24B4A" stroke-width="1.2"/>
+        <circle cx="160" cy="190" r="1.5" fill="#E24B4A"/>
+        <!-- fov lines very steep -->
+        <line x1="160" y1="183" x2="90" y2="40" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <line x1="160" y1="183" x2="230" y2="40" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
+        <text x="160" y="178" font-size="20" fill="#E24B4A" text-anchor="middle" font-family="sans-serif">✕</text>
+      </svg>
+      <div style="padding:14px 16px">
+        <div class="badge badge-avoid">Avoid</div>
+        <div class="cam-label">Ground-level or overhead</div>
+        <div class="cam-desc">Phone placed on the ground or held above the head. Extreme vertical angles collapse joint height data — knee angles and release height scores become inaccurate.</div>
+        <div class="cam-meta">
+          <span class="chip">Heights distorted</span>
+          <span class="chip">Knee data unreliable</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universal tips -->
+  <div class="tips-box">
+    <strong>Universal filming tips</strong>
+    <div class="tip-row"><div class="tip-icon"><i class="ti ti-device-mobile-camera" aria-hidden="true"></i></div><span>Film in <strong>landscape mode</strong> at 1080p or higher. Slow-motion (120–240fps) gives the most accurate joint tracking.</span></div>
+    <div class="tip-row"><div class="tip-icon"><i class="ti ti-ruler" aria-hidden="true"></i></div><span>Place the tripod or phone stand so the <strong>camera is at hip height</strong> and the entire run-up fits in frame.</span></div>
+    <div class="tip-row"><div class="tip-icon"><i class="ti ti-sun" aria-hidden="true"></i></div><span>Shoot with the <strong>light behind the camera</strong> — avoid backlighting the bowler against a bright sky.</span></div>
+    <div class="tip-row"><div class="tip-icon"><i class="ti ti-arrows-move" aria-hidden="true"></i></div><span>Keep the camera <strong>stationary</strong> throughout. Panning during the action degrades landmark tracking accuracy.</span></div>
+  </div>
+</div>
+
+<script>
+function switchTab(id){
+  document.querySelectorAll('.cam-tab').forEach((t,i)=>{
+    const ids=['side','back','front'];
+    t.classList.toggle('active', ids[i]===id);
+  });
+  document.querySelectorAll('.cam-panel').forEach(p=>{
+    p.classList.toggle('active', p.id==='panel-'+id);
+  });
+}
+</script>
+
 </section>
 
 <div class="divider"></div>
