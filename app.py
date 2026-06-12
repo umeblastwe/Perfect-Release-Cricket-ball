@@ -166,10 +166,16 @@ def process_bowling_video(video_path, output_path, job_id):
         rel_scores    = []
         velocities    = []
 
-        # ── elbow state ──
-        theta_horiz   = None
-        arm_at_horiz  = False
-        bowling_side  = None
+        # ── elbow / ICC extension state machine ──
+        # ICC rule: extension = angle_at_release − angle_at_horizontal
+        # One delivery cycle: IDLE → HORIZ → HUNT → DONE → IDLE
+        bowling_side    = None    # 'left' | 'right', locked on first confident frame
+        del_state       = 'IDLE'  # delivery state machine
+        theta_h         = None    # elbow angle when arm first hits horizontal
+        min_wrist_y     = 1.0     # track highest wrist position (smallest y = highest)
+        ea_at_peak      = None    # elbow angle at that highest wrist moment (= release)
+        display_ext     = 0.0     # extension shown on overlay (updated per delivery)
+        display_ea      = 0.0     # elbow angle shown on overlay
 
         # ── bowler lock ──
         lock = BowlerLock()
@@ -266,38 +272,81 @@ def process_bowling_video(video_path, output_path, job_id):
                 put_label(frame, f"R Knee: {int(ra)} deg",
                           int(r_knee.x*proc_w)+14, int(r_knee.y*proc_h)-24, col)
 
-            # ── ELBOW EXTENSION ──
+            # ── ELBOW EXTENSION  (ICC correct measurement) ──
+            # The 15-degree rule measures straightening between horizontal and release.
+            # We detect: IDLE → arm below shoulder
+            #            HORIZ → arm reaches horizontal, snapshot elbow angle (theta_h)
+            #            HUNT  → track wrist until it peaks (highest y = release moment)
+            #            DONE  → compute extension = ea_at_peak - theta_h, display it
             if l_wri.visibility > 0.4 and r_wri.visibility > 0.4:
+
+                # Lock bowling side once: whichever wrist is clearly above the shoulder
                 if bowling_side is None:
-                    # Wrist that is higher (smaller y) is the bowling arm
-                    bowling_side = 'left' if l_wri.y < r_wri.y else 'right'
+                    l_above = l_sh.y - l_wri.y   # positive = wrist above shoulder
+                    r_above = r_sh.y - r_wri.y
+                    if max(l_above, r_above) > 0.05:
+                        bowling_side = 'left' if l_above > r_above else 'right'
 
-                b_sh  = l_sh  if bowling_side == 'left' else r_sh
-                b_elb = l_elb if bowling_side == 'left' else r_elb
-                b_wri = l_wri if bowling_side == 'left' else r_wri
+                if bowling_side is not None:
+                    b_sh  = l_sh  if bowling_side == 'left' else r_sh
+                    b_elb = l_elb if bowling_side == 'left' else r_elb
+                    b_wri = l_wri if bowling_side == 'left' else r_wri
 
-                ea_3d = elbow_angle_3d(b_sh, b_elb, b_wri)
+                    ea_now = elbow_angle_3d(b_sh, b_elb, b_wri)
 
-                if abs(b_sh.y - b_elb.y) < 0.15 and not arm_at_horiz:
-                    theta_horiz  = ea_3d
-                    arm_at_horiz = True
+                    # ── STATE MACHINE ──
+                    wrist_above_sh  = b_sh.y - b_wri.y          # positive = wrist above sh
+                    elbow_near_sh_h = abs(b_sh.y - b_elb.y)     # small = arm horizontal
 
-                live_ext = 0.0
-                if arm_at_horiz and theta_horiz is not None:
-                    live_ext = max(0.0, ea_3d - theta_horiz)
+                    if del_state == 'IDLE':
+                        # Wait for arm to reach roughly horizontal (elbow at shoulder height)
+                        # and wrist still rising (wrist above shoulder)
+                        if elbow_near_sh_h < 0.12 and wrist_above_sh > -0.05:
+                            theta_h     = ea_now
+                            min_wrist_y = b_wri.y   # initialise peak tracker
+                            ea_at_peak  = ea_now
+                            del_state   = 'HUNT'
 
-                if b_wri.y > b_sh.y + 0.22:
-                    arm_at_horiz = False
-                    theta_horiz  = None
+                    elif del_state == 'HUNT':
+                        # Track the wrist as it continues to rise toward release
+                        # Release = highest wrist position (minimum Y value)
+                        if b_wri.y < min_wrist_y:
+                            min_wrist_y = b_wri.y
+                            ea_at_peak  = ea_now
 
-                wx = int(b_wri.x * proc_w)
-                wy = int(b_wri.y * proc_h)
-                draw_arc(frame, b_elb, b_sh, b_wri, (0,242,254), radius=28)
-                put_label(frame, f"Elbow Ext: {int(live_ext)} deg",   wx+14, wy-32, (0,242,254))
-                put_label(frame, f"Elbow Angle: {int(ea_3d)} deg",    wx+14, wy-6,  (200,200,200))
+                        # Wrist has started falling — release has passed, compute extension
+                        if b_wri.y > min_wrist_y + 0.04:
+                            if theta_h is not None and ea_at_peak is not None:
+                                raw_ext = ea_at_peak - theta_h
+                                # Extension means the arm STRAIGHTENED (angle grew toward 180)
+                                display_ext = max(0.0, raw_ext)
+                                display_ea  = ea_at_peak
+                            del_state = 'DONE'
 
-                ground = max(l_ankle.y, r_ankle.y)
-                rel_scores.append((ground - b_wri.y) * 100)
+                    elif del_state == 'DONE':
+                        # Hold display until arm drops back below shoulder → new delivery
+                        if b_wri.y > b_sh.y + 0.15:
+                            del_state    = 'IDLE'
+                            theta_h      = None
+                            min_wrist_y  = 1.0
+                            ea_at_peak   = None
+
+                    # ── OVERLAY ──
+                    wx = int(b_wri.x * proc_w)
+                    wy = int(b_wri.y * proc_h)
+                    draw_arc(frame, b_elb, b_sh, b_wri, (0,242,254), radius=28)
+
+                    if del_state in ('HUNT', 'DONE'):
+                        ext_color = (0,255,0) if display_ext <= 15 else (0,200,255)
+                        put_label(frame, f"Elbow Ext: {display_ext:.1f} deg",  wx+14, wy-32, ext_color)
+                        put_label(frame, f"Elbow Angle: {int(display_ea)} deg", wx+14, wy-6,  (200,200,200))
+                    else:
+                        # During IDLE show live angle only (no extension yet)
+                        put_label(frame, f"Elbow Angle: {int(ea_now)} deg", wx+14, wy-6, (200,200,200))
+
+                    # Release height score (wrist vs ground)
+                    ground = max(l_ankle.y, r_ankle.y)
+                    rel_scores.append((ground - b_wri.y) * 100)
 
             # ── STRIDE ──
             if l_ankle.visibility > 0.4 and r_ankle.visibility > 0.4:
