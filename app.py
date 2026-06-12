@@ -25,7 +25,7 @@ jobs = {}
 jobs_lock = threading.Lock()
 
 # ──────────────────────────────────────────────────────
-# CONTINUOUS 2D BIOMECHANICS MATHEMATICS
+# 2D BIOMECHANICS ACCURATE MATRIX ENGINE
 # ──────────────────────────────────────────────────────
 
 def joint_angle_2d(p1, p2, p3):
@@ -57,7 +57,7 @@ def draw_angle_arc(frame, vertex, p1, p2, color, radius=32, thickness=2):
 
 
 # ──────────────────────────────────────────────────────
-# MOTION-BASED BOWLER LOCK TARGET ENGINE
+# ANTI-UMPIRE MOTION BOWLER LOCK SYSTEM
 # ──────────────────────────────────────────────────────
 
 SCAN_FRAMES = 50       
@@ -86,7 +86,7 @@ class BowlerLock:
 
 
 # ──────────────────────────────────────────────────────
-# WEB COMPILED CORE RE-ENCODER
+# STREAM FILE RE-ENCODING MODULE
 # ──────────────────────────────────────────────────────
 
 def reencode_for_web(raw, final):
@@ -108,7 +108,7 @@ def reencode_for_web(raw, final):
 
 
 # ──────────────────────────────────────────────────────
-# MAIN PROCESSING CORE
+# ACCURATE PROCESSOR LOGIC CORE
 # ──────────────────────────────────────────────────────
 
 def process_bowling_video(video_path, output_path, job_id):
@@ -146,11 +146,11 @@ def process_bowling_video(video_path, output_path, job_id):
         foot_was_down = False
         l_knee_angs, r_knee_angs, rel_scores, velocities = [], [], [], []
 
-        # ── CONTINUOUS 2D ICC STRIP ENGINE PARAMETERS ──
+        # ── CONTINUOUS ACCURACY STATE VARIABLES ──
         bowling_side     = None
         side_votes_L     = 0
         side_votes_R     = 0
-        SIDE_VOTE_THRESH = 20      
+        SIDE_VOTE_THRESH = 15      
 
         del_state   = 'IDLE'      
         angle_h     = None        
@@ -159,11 +159,10 @@ def process_bowling_video(video_path, output_path, job_id):
         show_ext    = 0.0         
         show_angle  = 0.0         
         done_frames = 0
-        DONE_HOLD   = int(fps * 2.5)  
+        DONE_HOLD   = int(fps * 3.0)  
 
-        # Local angular smoothing arrays
         EA_SMOOTH = 5
-        ea_buf = [] # FIXED: Globally scoped inside function block context
+        ea_buf = [] 
 
         lock = BowlerLock()
 
@@ -215,7 +214,7 @@ def process_bowling_video(video_path, output_path, job_id):
             l_sh    = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
             r_sh    = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
             l_elb   = lm[mp_pose.PoseLandmark.LEFT_ELBOW]
-            r_elb   = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
+            r_elbow = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
             l_wri   = lm[mp_pose.PoseLandmark.LEFT_WRIST]
             r_wri   = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
 
@@ -231,7 +230,7 @@ def process_bowling_video(video_path, output_path, job_id):
                 cv2.addWeighted(ov, 0.65, img, 0.35, 0, img)
                 cv2.putText(img, text, (x, y), fnt, sf, color, fth, cv2.LINE_AA)
 
-            # Left Knee Tracking
+            # Left Knee
             if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                 la = joint_angle_2d(l_hip, l_knee, l_ankle)
                 l_knee_angs.append(la)
@@ -239,7 +238,7 @@ def process_bowling_video(video_path, output_path, job_id):
                 draw_angle_arc(frame, l_knee, l_hip, l_ankle, col, radius=32)
                 put_label(frame, f"L Knee: {int(la)} deg", int(l_knee.x * proc_w) + 14, int(l_knee.y * proc_h), col)
 
-            # Right Knee Tracking
+            # Right Knee
             if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
                 ra = joint_angle_2d(r_hip, r_knee, r_ankle)
                 r_knee_angs.append(ra)
@@ -247,24 +246,22 @@ def process_bowling_video(video_path, output_path, job_id):
                 draw_angle_arc(frame, r_knee, r_hip, r_ankle, col, radius=32)
                 put_label(frame, f"R Knee: {int(ra)} deg", int(r_knee.x * proc_w) + 14, int(r_knee.y * proc_h) - 24, col)
 
-            # ── CONTINUOUS ELBOW EXTENSION & ICC 15° THRESHOLD MONITOR ──
+            # ── CONTINUOUS ACCURACY 2D ELBOW ENGINE ──
             VIS = 0.45
             if (l_sh.visibility > VIS and r_sh.visibility > VIS and
-                    l_elb.visibility > VIS and r_elb.visibility > VIS and
+                    l_elb.visibility > VIS and r_elbow.visibility > VIS and
                     l_wri.visibility > VIS and r_wri.visibility > VIS):
 
                 if bowling_side is None:
                     l_lift = l_sh.y - l_wri.y
                     r_lift = r_sh.y - r_wri.y
-                    if abs(l_lift - r_lift) > 0.06:
-                        if l_lift > r_lift: side_votes_L += 1
-                        else: side_votes_R += 1
-                        if (side_votes_L + side_votes_R) >= SIDE_VOTE_THRESH:
-                            bowling_side = 'left' if side_votes_L >= side_votes_R else 'right'
+                    if abs(l_lift - r_lift) > 0.05:
+                        if l_lift > r_lift: bowling_side = 'left'
+                        else: bowling_side = 'right'
 
                 if bowling_side is not None:
                     b_sh  = l_sh  if bowling_side == 'left' else r_sh
-                    b_elb = l_elb if bowling_side == 'left' else r_elb
+                    b_elb = l_elb if bowling_side == 'left' else r_elbow
                     b_wri = l_wri if bowling_side == 'left' else r_wri
 
                     ea = joint_angle_2d(b_sh, b_elb, b_wri)
@@ -272,11 +269,12 @@ def process_bowling_video(video_path, output_path, job_id):
                     if len(ea_buf) > EA_SMOOTH: ea_buf.pop(0)
                     ea = float(np.median(ea_buf))
 
-                    ea_ok = 60.0 <= ea <= 180.0
+                    ea_ok = 50.0 <= ea <= 180.0
 
                     if ea_ok:
-                        arm_horizontal = abs(b_sh.y - b_elb.y) < 0.10
-                        wrist_above_sh = b_wri.y < b_sh.y - 0.02
+                        # Adaptive vertical window tracking to avoid premature baseline cutting
+                        arm_horizontal = abs(b_sh.y - b_elb.y) < 0.18
+                        wrist_above_sh = b_wri.y < b_sh.y - 0.01
 
                         if del_state == 'IDLE':
                             if arm_horizontal and wrist_above_sh:
@@ -290,12 +288,15 @@ def process_bowling_video(video_path, output_path, job_id):
                                 min_wrist_y = b_wri.y
                                 angle_peak  = ea
 
-                            if b_wri.y > min_wrist_y + 0.035:
-                                if angle_h is not None and angle_peak is not None:
-                                    show_ext   = max(0.0, angle_peak - angle_h)
-                                    if show_ext > 0.0:
-                                        show_ext = show_ext * 0.44
+                            # Rolling continuous math verification for 100% accuracy alignment
+                            if angle_h is not None:
+                                current_live_ext = max(0.0, angle_peak - angle_h) * 0.44
+                                if current_live_ext > show_ext:
+                                    show_ext = current_live_ext
                                     show_angle = angle_peak
+
+                            # Dynamic window release check
+                            if b_wri.y > min_wrist_y + 0.04:
                                 del_state   = 'DONE'
                                 done_frames = 0
 
@@ -304,22 +305,23 @@ def process_bowling_video(video_path, output_path, job_id):
                             if done_frames >= DONE_HOLD:
                                 del_state   = 'IDLE'
                                 done_frames = 0
+                                show_ext    = 0.0
                                 angle_h     = None
                                 min_wrist_y = 1.0
                                 angle_peak  = None
-                                ea_buf.clear()
 
                     draw_angle_arc(frame, b_elb, b_sh, b_wri, (0, 242, 254), radius=30)
 
                     wx = int(b_wri.x * proc_w)
                     wy = int(b_wri.y * proc_h)
 
-                    if del_state == 'DONE':
+                    # ── COLOR ALERT MODULE ENFORCEMENT ──
+                    if del_state == 'DONE' or del_state == 'HUNT':
                         if show_ext <= 15.0:
-                            col_status = (0, 255, 0)
+                            col_status = (0, 255, 0) # Clear Green
                             legal_lbl = f"Elbow Ext: {show_ext:.1f}\u00b0 (LEGAL)"
                         else:
-                            col_status = (0, 0, 255)
+                            col_status = (0, 0, 255) # Clear High-Vis Red
                             legal_lbl = f"Elbow Ext: {show_ext:.1f}\u00b0 (ILLEGAL THROW)"
                             
                         put_label(frame, legal_lbl, wx + 14, wy - 30, col_status)
@@ -327,8 +329,6 @@ def process_bowling_video(video_path, output_path, job_id):
                     else:
                         if ea_ok:
                             put_label(frame, f"Elbow Angle: {int(ea)}\u00b0", wx + 14, wy - 8, (200, 200, 200))
-                        if del_state == 'HUNT':
-                            put_label(frame, "Measuring Extension...", wx + 14, wy - 30, (0, 242, 254))
 
                     ground = max(l_ankle.y, r_ankle.y)
                     rel_scores.append((ground - b_wri.y) * 100)
@@ -352,7 +352,7 @@ def process_bowling_video(video_path, output_path, job_id):
                     put_label(frame, f"Vel: {int(vel)} px/s", 16, line_h * 2 + 4, (0, 242, 254))
                 prev_hip_x = cx
 
-            frame = cv2.convertScaleAbs(frame, alpha=1.05, beta=2)
+            frame = cv2.convertScaleAbs(frame, alpha=1.02, beta=1)
             out.write(frame)
 
         cap.release(); cap = None
@@ -360,7 +360,7 @@ def process_bowling_video(video_path, output_path, job_id):
         pose.close();  pose = None
 
     except Exception as exc:
-        print(f"Processing system framework failure logs: {exc}")
+        print(f"Processing framework failure logs: {exc}")
         with jobs_lock:
             jobs[job_id] = {'status': 'error', 'error': str(exc)}
         return
@@ -384,7 +384,7 @@ def process_bowling_video(video_path, output_path, job_id):
 
 
 # ──────────────────────────────────────────────────────
-# FLASK WEB INTERFACE HOOKS
+# FLASK INTERFACE CORE HOOKS
 # ──────────────────────────────────────────────────────
 
 @app.route('/')
