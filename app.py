@@ -161,23 +161,17 @@ def process_bowling_video(video_path, output_path, job_id):
         done_frames = 0
         DONE_HOLD   = int(fps * 2.5)  
 
+        # Local angular smoothing arrays
+        EA_SMOOTH = 5
+        ea_buf = [] # FIXED: Globally scoped inside function block context
+
         lock = BowlerLock()
 
         sf  = max(min(proc_w, proc_h) / 720 * 0.52, 0.30)
         fth = max(1, int(sf * 2))
         pad = max(6, int(sf * 10))
 
-        def put_label(img, text, x, y, color):
-            fnt = cv2.FONT_HERSHEY_SIMPLEX
-            (tw, txh), bl_b = cv2.getTextSize(text, fnt, sf, fth)
-            x = max(pad, min(x, proc_w - tw - pad * 2))
-            y = max(txh + pad, min(y, proc_h - pad))
-            ov = img.copy()
-            cv2.rectangle(ov, (x - pad, y - txh - pad), (x + tw + pad, y + bl_b + pad // 2), (10, 14, 22), -1)
-            cv2.addWeighted(ov, 0.65, img, 0.35, 0, img)
-            cv2.putText(img, text, (x, y), fnt, sf, color, fth, cv2.LINE_AA)
-
-        while True:
+        while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
@@ -227,6 +221,16 @@ def process_bowling_video(video_path, output_path, job_id):
 
             line_h = max(22, int(proc_h * 0.055))
 
+            def put_label(img, text, x, y, color):
+                fnt = cv2.FONT_HERSHEY_SIMPLEX
+                (tw, txh), bl_b = cv2.getTextSize(text, fnt, sf, fth)
+                x = max(pad, min(x, proc_w - tw - pad * 2))
+                y = max(txh + pad, min(y, proc_h - pad))
+                ov = img.copy()
+                cv2.rectangle(ov, (x - pad, y - txh - pad), (x + tw + pad, y + bl_b + pad // 2), (10, 14, 22), -1)
+                cv2.addWeighted(ov, 0.65, img, 0.35, 0, img)
+                cv2.putText(img, text, (x, y), fnt, sf, color, fth, cv2.LINE_AA)
+
             # Left Knee Tracking
             if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
                 la = joint_angle_2d(l_hip, l_knee, l_ankle)
@@ -263,7 +267,6 @@ def process_bowling_video(video_path, output_path, job_id):
                     b_elb = l_elb if bowling_side == 'left' else r_elb
                     b_wri = l_wri if bowling_side == 'left' else r_wri
 
-                    # Pure 2D calculations for 100% digestable metrics
                     ea = joint_angle_2d(b_sh, b_elb, b_wri)
                     ea_buf.append(ea)
                     if len(ea_buf) > EA_SMOOTH: ea_buf.pop(0)
@@ -290,11 +293,8 @@ def process_bowling_video(video_path, output_path, job_id):
                             if b_wri.y > min_wrist_y + 0.035:
                                 if angle_h is not None and angle_peak is not None:
                                     show_ext   = max(0.0, angle_peak - angle_h)
-                                    
-                                    # Continuous scale compression mapping 
                                     if show_ext > 0.0:
                                         show_ext = show_ext * 0.44
-                                        
                                     show_angle = angle_peak
                                 del_state   = 'DONE'
                                 done_frames = 0
@@ -314,13 +314,12 @@ def process_bowling_video(video_path, output_path, job_id):
                     wx = int(b_wri.x * proc_w)
                     wy = int(b_wri.y * proc_h)
 
-                    # ── DYNAMIC COLOR-CODED ICC 15 DEGREE ALERT LAW CONTROLLER ──
                     if del_state == 'DONE':
                         if show_ext <= 15.0:
-                            col_status = (0, 255, 0) # Green for Legal
+                            col_status = (0, 255, 0)
                             legal_lbl = f"Elbow Ext: {show_ext:.1f}\u00b0 (LEGAL)"
                         else:
-                            col_status = (0, 0, 255) # High-vis Red for Illegal Throw
+                            col_status = (0, 0, 255)
                             legal_lbl = f"Elbow Ext: {show_ext:.1f}\u00b0 (ILLEGAL THROW)"
                             
                         put_label(frame, legal_lbl, wx + 14, wy - 30, col_status)
@@ -356,14 +355,15 @@ def process_bowling_video(video_path, output_path, job_id):
             frame = cv2.convertScaleAbs(frame, alpha=1.05, beta=2)
             out.write(frame)
 
+        cap.release(); cap = None
+        out.release(); out = None
+        pose.close();  pose = None
+
     except Exception as exc:
         print(f"Processing system framework failure logs: {exc}")
         with jobs_lock:
             jobs[job_id] = {'status': 'error', 'error': str(exc)}
-    finally:
-        if pose: pose.close()
-        if cap: cap.release()
-        if out: out.release()
+        return
         
     reencode_for_web(raw_out, output_path)
 
