@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import cv2
 import mediapipe as mp
 import os
 import subprocess
 import numpy as np
-import time
 import threading
 import uuid
+from collections import deque
 from flask import Flask, request, render_template, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -16,341 +17,357 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 OUTPUT_FOLDER = os.path.join(os.getcwd(), 'static')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
+app.config['UPLOAD_FOLDER']      = UPLOAD_FOLDER
+app.config['OUTPUT_FOLDER']      = OUTPUT_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 
-jobs = {}
+jobs      = {}
 jobs_lock = threading.Lock()
 
+# ──────────────────────────────────────────────────────
+# MATHS
+# ──────────────────────────────────────────────────────
 
-def calculate_joint_angle(p1, p2, p3):
+def joint_angle_2d(p1, p2, p3):
     a = np.array([p1.x, p1.y])
     b = np.array([p2.x, p2.y])
     c = np.array([p3.x, p3.y])
-    ba = a - b
-    bc = c - b
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
-    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-    return np.degrees(np.arccos(cosine_angle))
+    ba, bc = a - b, c - b
+    cos = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc) + 1e-6)
+    return float(np.degrees(np.arccos(np.clip(cos, -1.0, 1.0))))
 
 
-def calculate_3d_elbow_angle(shoulder, elbow, wrist):
-    s = np.array([shoulder.x, shoulder.y, shoulder.z])
-    e = np.array([elbow.x, elbow.y, elbow.z])
-    w = np.array([wrist.x, wrist.y, wrist.z])
-    v_se = s - e
-    v_ew = w - e
-    dot_product = np.dot(v_se, v_ew)
-    cosine_angle = dot_product / (np.linalg.norm(v_se) * np.linalg.norm(v_ew) + 1e-6)
-    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-    return np.degrees(np.arccos(cosine_angle))
+def elbow_angle_3d(sh, elb, wri):
+    s = np.array([sh.x,  sh.y,  sh.z])
+    e = np.array([elb.x, elb.y, elb.z])
+    w = np.array([wri.x, wri.y, wri.z])
+    vse, vew = s - e, w - e
+    cos = np.dot(vse, vew) / (np.linalg.norm(vse) * np.linalg.norm(vew) + 1e-6)
+    return float(np.degrees(np.arccos(np.clip(cos, -1.0, 1.0))))
 
 
-def draw_angle_arc(frame, vertex, p1, p2, angle_deg, color, radius=32, thickness=2):
+def draw_arc(frame, vtx, p1, p2, color, radius=32, thick=2):
     h, w = frame.shape[:2]
-    cx = int(vertex.x * w)
-    cy = int(vertex.y * h)
-    ax = int(p1.x * w) - cx
-    ay = int(p1.y * h) - cy
-    bx = int(p2.x * w) - cx
-    by = int(p2.y * h) - cy
-    angle_a = np.degrees(np.arctan2(ay, ax))
-    angle_b = np.degrees(np.arctan2(by, bx))
-    start_angle = min(angle_a, angle_b)
-    end_angle   = max(angle_a, angle_b)
-    if end_angle - start_angle > 180:
-        start_angle, end_angle = end_angle, start_angle + 360
-    cv2.ellipse(frame, (cx, cy), (radius, radius), 0, start_angle, end_angle, color, thickness, cv2.LINE_AA)
+    cx, cy = int(vtx.x * w), int(vtx.y * h)
+    ang_a = float(np.degrees(np.arctan2(int(p1.y*h)-cy, int(p1.x*w)-cx)))
+    ang_b = float(np.degrees(np.arctan2(int(p2.y*h)-cy, int(p2.x*w)-cx)))
+    sa, ea = min(ang_a, ang_b), max(ang_a, ang_b)
+    if ea - sa > 180:
+        sa, ea = ea, sa + 360
+    cv2.ellipse(frame, (cx, cy), (radius, radius), 0, sa, ea, color, thick, cv2.LINE_AA)
 
 
-def reencode_for_web(raw_path, final_path):
+# ──────────────────────────────────────────────────────
+# BOWLER LOCK
+# ──────────────────────────────────────────────────────
+# HOW IT WORKS:
+#   For the first SCAN_FRAMES frames we run MediaPipe on the full frame and
+#   record where we detect hips.  Then we compute the median position and lock
+#   onto that person.  After locking, any detection whose mid-hip X is more
+#   than TOLERANCE away from the locked centre is rejected — that's the umpire
+#   or batsman.  The lock centre drifts slowly (EMA) so a sprinting bowler
+#   who runs across the frame stays tracked.
+
+SCAN_FRAMES = 50        # frames spent in identification phase
+TOLERANCE   = 0.30      # normalised-X units of allowed drift from lock centre
+
+
+class BowlerLock:
+    def __init__(self):
+        self.phase     = 'scan'      # 'scan' → 'locked'
+        self.history   = []
+        self.centre    = None
+
+    def feed(self, hip_x):
+        """Call with mid-hip X (0-1) every frame during scan phase."""
+        self.history.append(hip_x)
+        if len(self.history) >= SCAN_FRAMES:
+            self.centre = float(np.median(self.history))
+            self.phase  = 'locked'
+
+    def accept(self, hip_x):
+        """Returns True if this detection is the bowler."""
+        if self.phase == 'scan':
+            # During scan always accept so we gather data
+            return True
+        return abs(hip_x - self.centre) <= TOLERANCE
+
+    def update(self, hip_x):
+        """Slow drift so we track a bowler moving across frame."""
+        if self.phase == 'locked' and self.centre is not None:
+            self.centre = 0.93 * self.centre + 0.07 * hip_x
+
+
+# ──────────────────────────────────────────────────────
+# FFMPEG
+# ──────────────────────────────────────────────────────
+
+def reencode_for_web(raw, final):
     try:
-        result = subprocess.run([
-            'ffmpeg', '-y', '-i', raw_path,
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
-            '-movflags', '+faststart', '-an', final_path
-        ], capture_output=True, timeout=180)
-        if os.path.exists(raw_path):
-            os.remove(raw_path)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"ffmpeg error: {e}")
-        if os.path.exists(raw_path):
-            try: os.rename(raw_path, final_path)
+        r = subprocess.run(
+            ['ffmpeg', '-y', '-i', raw,
+             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28',
+             '-movflags', '+faststart', '-an', final],
+            capture_output=True, timeout=180)
+        if os.path.exists(raw):
+            os.remove(raw)
+        return r.returncode == 0
+    except Exception as ex:
+        print(f"ffmpeg: {ex}")
+        if os.path.exists(raw):
+            try: os.rename(raw, final)
             except Exception: pass
         return False
 
 
+# ──────────────────────────────────────────────────────
+# CORE VIDEO PROCESSOR
+# ──────────────────────────────────────────────────────
+
 def process_bowling_video(video_path, output_path, job_id):
-    pose = None
-    cap  = None
-    out  = None
+    pose = cap = out = None
     try:
         mp_pose    = mp.solutions.pose
         mp_drawing = mp.solutions.drawing_utils
+
         pose = mp_pose.Pose(
             static_image_mode=False,
-            min_detection_confidence=0.4, # Adjusted for high-speed dynamic tracking locks
-            min_tracking_confidence=0.4,
-            model_complexity=0
+            model_complexity=1,
+            smooth_landmarks=True,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
         )
 
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
-            raise RuntimeError("Could not open video file")
+            raise RuntimeError("Cannot open video")
 
         orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps    = cap.get(cv2.CAP_PROP_FPS) or 25.0
-        time_per_frame = 1.0 / fps
+        tpf    = 1.0 / fps
 
-        max_dim = 720
-        if max(orig_w, orig_h) > max_dim:
-            scale_dims = max_dim / max(orig_w, orig_h)
-            proc_w = int(orig_w * scale_dims)
-            proc_h = int(orig_h * scale_dims)
-        else:
-            proc_w, proc_h = orig_w, orig_h
+        scale  = min(1.0, 720 / max(orig_w, orig_h))
+        proc_w = int(orig_w * scale)
+        proc_h = int(orig_h * scale)
 
-        raw_output = output_path.replace('.mp4', '_raw.mp4')
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out    = cv2.VideoWriter(raw_output, fourcc, fps, (proc_w, proc_h))
+        raw_out = output_path.replace('.mp4', '_raw.mp4')
+        out = cv2.VideoWriter(raw_out, cv2.VideoWriter_fourcc(*'mp4v'),
+                              fps, (proc_w, proc_h))
+        if not out.isOpened():
+            raise RuntimeError("Cannot create writer")
 
+        # ── stats ──
         prev_hip_x    = None
         stride_count  = 0
         foot_was_down = False
-        l_knee_angles, r_knee_angles = [], []
-        release_scores, velocities   = [], []
+        l_knee_angs   = []
+        r_knee_angs   = []
+        rel_scores    = []
+        velocities    = []
 
-        theta_horizontal         = None
-        arm_reached_horizontal   = False
-        bowling_side             = None
+        # ── elbow state ──
+        theta_horiz   = None
+        arm_at_horiz  = False
+        bowling_side  = None
 
-        # ── BACKGROUND MOTION FILTER VARIABLE SETUP ──
-        fgbg = cv2.createBackgroundSubtractorMOG2(history=20, varThreshold=24, detectShadows=False)
+        # ── bowler lock ──
+        lock = BowlerLock()
 
-        while cap.isOpened():
+        # ── font scale (computed once) ──
+        sf  = max(min(proc_w, proc_h) / 720 * 0.52, 0.30)
+        fth = max(1, int(sf * 2))
+        pad = max(6, int(sf * 10))
+
+        def put_label(img, text, x, y, color):
+            fnt = cv2.FONT_HERSHEY_SIMPLEX
+            (tw, txh), bl_b = cv2.getTextSize(text, fnt, sf, fth)
+            x = max(pad, min(x, proc_w - tw - pad * 2))
+            y = max(txh + pad, min(y, proc_h - pad))
+            ov = img.copy()
+            cv2.rectangle(ov,
+                          (x - pad,       y - txh - pad),
+                          (x + tw + pad,  y + bl_b + pad // 2),
+                          (10, 14, 22), -1)
+            cv2.addWeighted(ov, 0.65, img, 0.35, 0, img)
+            cv2.putText(img, text, (x, y), fnt, sf, color, fth, cv2.LINE_AA)
+
+        # ── main loop ──
+        while True:
             ret, frame = cap.read()
             if not ret:
                 break
 
-            if (proc_w, proc_h) != (orig_w, orig_h):
+            if scale != 1.0:
                 frame = cv2.resize(frame, (proc_w, proc_h))
 
-            h, w = frame.shape[:2]
-            
-            # ── MOTION TARGET DETECTION CONTROLLER ──
-            # Apply optical motion density mapping to extract the bounding box coordinates of the RUNNING bowler
-            fgmask = fgbg.apply(frame)
-            contours, _ = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            bowler_bbox = None
-            max_area = 0
-            
-            # Filter out tiny pixel adjustments and locate the primary running figure
-            for cnt in contours:
-                area = cv2.contourArea(cnt)
-                if area > 1200: # Threshold configuration to avoid umpire hand signals
-                    x, y, w_box, h_box = cv2.boundingRect(cnt)
-                    # Bowler runs vertically or diagonally down the pitch profile tracks
-                    if area > max_area:
-                        max_area = area
-                        bowler_bbox = (x, y, w_box, h_box)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            res = pose.process(rgb)
 
-            # Define isolated Region of Interest slice to lock processing pipeline on bowler canvas
-            analysis_target_frame = frame.copy()
-            if bowler_bbox is not None:
-                x, y, w_box, h_box = bowler_bbox
-                # Add directional padding headroom safety markers
-                pad_x = int(w_box * 0.25)
-                pad_y = int(h_box * 0.25)
-                x1 = max(0, x - pad_x)
-                y1 = max(0, y - pad_y)
-                x2 = min(w, x + w_box + pad_x)
-                y2 = min(h, y + h_box + pad_y)
-                
-                # Blackout spatial background environments containing static umpires/bystanders
-                mask = np.zeros_like(frame)
-                mask[y1:y2, x1:x2] = frame[y1:y2, x1:x2]
-                rgb_frame = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
-            else:
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if not res.pose_landmarks:
+                out.write(frame)
+                continue
 
-            results = pose.process(rgb_frame)
+            lm   = res.pose_landmarks.landmark
+            l_hip = lm[mp_pose.PoseLandmark.LEFT_HIP]
+            r_hip = lm[mp_pose.PoseLandmark.RIGHT_HIP]
 
-            scale_font = max(min(w, h) / 720 * 0.5, 0.28)
-            thickness  = max(1, int(scale_font * 2))
-            pad        = int(scale_font * 12)
+            # Mid-hip X used for bowler identity
+            mid_hip_x = (l_hip.x + r_hip.x) / 2.0
 
-            def put_label(img, text, x, y, color):
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                (tw, th), bl = cv2.getTextSize(text, font, scale_font, thickness)
-                x = max(pad, min(x, w - tw - pad * 2))
-                y = max(th + pad, min(y, h - pad))
-                overlay = img.copy()
-                cv2.rectangle(overlay, (x - pad, y - th - pad), (x + tw + pad, y + bl + pad // 2), (12, 16, 24), -1)
-                cv2.addWeighted(overlay, 0.65, img, 0.35, 0, img)
-                cv2.putText(img, text, (x, y), font, scale_font, color, thickness, cv2.LINE_AA)
+            # Feed lock system
+            if lock.phase == 'scan':
+                if l_hip.visibility > 0.4 or r_hip.visibility > 0.4:
+                    lock.feed(mid_hip_x)
 
-            if results.pose_landmarks:
-                lm = results.pose_landmarks.landmark
-                l_hip      = lm[mp_pose.PoseLandmark.LEFT_HIP]
-                l_knee     = lm[mp_pose.PoseLandmark.LEFT_KNEE]
-                l_ankle    = lm[mp_pose.PoseLandmark.LEFT_ANKLE]
-                r_hip      = lm[mp_pose.PoseLandmark.RIGHT_HIP]
-                r_knee     = lm[mp_pose.PoseLandmark.RIGHT_KNEE]
-                r_ankle    = lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
-                l_shoulder = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
-                r_shoulder = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
-                l_wrist    = lm[mp_pose.PoseLandmark.LEFT_WRIST]
-                r_wrist    = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
-                l_elbow    = lm[mp_pose.PoseLandmark.LEFT_ELBOW]
-                r_elbow    = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
+            # Reject umpire / batsman
+            if not lock.accept(mid_hip_x):
+                out.write(frame)
+                continue
 
-                # ── BIOMECHANICAL BOUNDARY SANITY CONTROLLER ──
-                # If the tracker targets an entity too far from the computed dynamic motion epicenter (e.g., Umpire), abort loop processing
-                if bowler_bbox is not None:
-                    hip_pixel_x = int(l_hip.x * w)
-                    if hip_pixel_x < x1 or hip_pixel_x > x2:
-                        out.write(frame)
-                        continue
+            # Update drift
+            lock.update(mid_hip_x)
 
-                mp_drawing.draw_landmarks(
-                    frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                    mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=2, circle_radius=2),
-                    mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1)
-                )
+            # ── Draw skeleton on BOWLER only ──
+            mp_drawing.draw_landmarks(
+                frame, res.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                mp_drawing.DrawingSpec(color=(0, 242, 254), thickness=2, circle_radius=2),
+                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=1),
+            )
 
-                # Left Knee
-                if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
-                    l_angle = calculate_joint_angle(l_hip, l_knee, l_ankle)
-                    l_knee_angles.append(l_angle)
-                    arc_col = (0, 255, 0) if l_angle >= 165 else ((0, 200, 255) if l_angle >= 140 else (232, 234, 242))
-                    draw_angle_arc(frame, l_knee, l_hip, l_ankle, l_angle, arc_col, radius=32)
-                    put_label(frame, f"L Knee: {int(l_angle)}\u00b0", int(l_knee.x*w)+12, int(l_knee.y*h), arc_col)
+            l_knee  = lm[mp_pose.PoseLandmark.LEFT_KNEE]
+            l_ankle = lm[mp_pose.PoseLandmark.LEFT_ANKLE]
+            r_knee  = lm[mp_pose.PoseLandmark.RIGHT_KNEE]
+            r_ankle = lm[mp_pose.PoseLandmark.RIGHT_ANKLE]
+            l_sh    = lm[mp_pose.PoseLandmark.LEFT_SHOULDER]
+            r_sh    = lm[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+            l_elb   = lm[mp_pose.PoseLandmark.LEFT_ELBOW]
+            r_elb   = lm[mp_pose.PoseLandmark.RIGHT_ELBOW]
+            l_wri   = lm[mp_pose.PoseLandmark.LEFT_WRIST]
+            r_wri   = lm[mp_pose.PoseLandmark.RIGHT_WRIST]
 
-                # Right Knee
-                if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
-                    r_angle = calculate_joint_angle(r_hip, r_knee, r_ankle)
-                    r_knee_angles.append(r_angle)
-                    arc_col_r = (0, 255, 0) if r_angle >= 165 else ((0, 200, 255) if r_angle >= 140 else (232, 234, 242))
-                    draw_angle_arc(frame, r_knee, r_hip, r_ankle, r_angle, arc_col_r, radius=32)
-                    put_label(frame, f"R Knee: {int(r_angle)}\u00b0", int(r_knee.x*w)+12, int(r_knee.y*h)-22, arc_col_r)
+            line_h = max(22, int(proc_h * 0.055))
 
-                # ICC 3D Elbow Extension 
-                if l_wrist.visibility > 0.5 and r_wrist.visibility > 0.5:
-                    if bowling_side is None:
-                        bowling_side = 'left' if l_wrist.y < r_wrist.y else 'right'
+            # ── LEFT KNEE ──
+            if l_hip.visibility > 0.5 and l_knee.visibility > 0.5 and l_ankle.visibility > 0.5:
+                la  = joint_angle_2d(l_hip, l_knee, l_ankle)
+                l_knee_angs.append(la)
+                col = (0,255,0) if la >= 165 else ((0,200,255) if la >= 140 else (232,234,242))
+                draw_arc(frame, l_knee, l_hip, l_ankle, col, radius=32)
+                put_label(frame, f"L Knee: {int(la)} deg",
+                          int(l_knee.x*proc_w)+14, int(l_knee.y*proc_h), col)
 
-                    b_shoulder = l_shoulder if bowling_side == 'left' else r_shoulder
-                    b_elbow    = l_elbow    if bowling_side == 'left' else r_elbow
-                    b_wrist    = l_wrist    if bowling_side == 'left' else r_wrist
+            # ── RIGHT KNEE ──
+            if r_hip.visibility > 0.5 and r_knee.visibility > 0.5 and r_ankle.visibility > 0.5:
+                ra  = joint_angle_2d(r_hip, r_knee, r_ankle)
+                r_knee_angs.append(ra)
+                col = (0,255,0) if ra >= 165 else ((0,200,255) if ra >= 140 else (232,234,242))
+                draw_arc(frame, r_knee, r_hip, r_ankle, col, radius=32)
+                put_label(frame, f"R Knee: {int(ra)} deg",
+                          int(r_knee.x*proc_w)+14, int(r_knee.y*proc_h)-24, col)
 
-                    current_3d_angle = calculate_3d_elbow_angle(b_shoulder, b_elbow, b_wrist)
+            # ── ELBOW EXTENSION ──
+            if l_wri.visibility > 0.4 and r_wri.visibility > 0.4:
+                if bowling_side is None:
+                    # Wrist that is higher (smaller y) is the bowling arm
+                    bowling_side = 'left' if l_wri.y < r_wri.y else 'right'
 
-                    arm_is_horizontal = abs(b_shoulder.y - b_elbow.y) < 0.15
-                    if arm_is_horizontal and not arm_reached_horizontal:
-                        theta_horizontal       = current_3d_angle
-                        arm_reached_horizontal = True
+                b_sh  = l_sh  if bowling_side == 'left' else r_sh
+                b_elb = l_elb if bowling_side == 'left' else r_elb
+                b_wri = l_wri if bowling_side == 'left' else r_wri
 
-                    live_extension = 0.0
-                    if arm_reached_horizontal and theta_horizontal is not None:
-                        live_extension = max(0.0, current_3d_angle - theta_horizontal)
-                        if live_extension > 0.0:
-                            live_extension = live_extension * 0.44
+                ea_3d = elbow_angle_3d(b_sh, b_elb, b_wri)
 
-                    if b_wrist.y > b_shoulder.y + 0.20:
-                        arm_reached_horizontal = False
-                        theta_horizontal       = None
+                if abs(b_sh.y - b_elb.y) < 0.15 and not arm_at_horiz:
+                    theta_horiz  = ea_3d
+                    arm_at_horiz = True
 
-                    wx = int(b_wrist.x * w)
-                    wy = int(b_wrist.y * h)
+                live_ext = 0.0
+                if arm_at_horiz and theta_horiz is not None:
+                    live_ext = max(0.0, ea_3d - theta_horiz)
 
-                    draw_angle_arc(frame, b_elbow, b_shoulder, b_wrist, current_3d_angle, (0, 242, 254), radius=28)
-                    put_label(frame, f"Elbow Ext: {int(live_extension)}\u00b0", wx + 14, wy - 30, (0, 242, 254))
-                    put_label(frame, f"Elbow Angle: {int(current_3d_angle)}\u00b0", wx + 14, wy - 6,  (200, 200, 200))
+                if b_wri.y > b_sh.y + 0.22:
+                    arm_at_horiz = False
+                    theta_horiz  = None
 
-                    ground_ref = max(l_ankle.y, r_ankle.y)
-                    rel_score  = (ground_ref - b_wrist.y) * 100
-                    release_scores.append(rel_score)
+                wx = int(b_wri.x * proc_w)
+                wy = int(b_wri.y * proc_h)
+                draw_arc(frame, b_elb, b_sh, b_wri, (0,242,254), radius=28)
+                put_label(frame, f"Elbow Ext: {int(live_ext)} deg",   wx+14, wy-32, (0,242,254))
+                put_label(frame, f"Elbow Angle: {int(ea_3d)} deg",    wx+14, wy-6,  (200,200,200))
 
-                # Stride Counter
-                line_h = int(scale_font * 36)
-                if l_ankle.visibility > 0.5 and r_ankle.visibility > 0.5:
-                    if max(l_ankle.y, r_ankle.y) > 0.82:
-                        if not foot_was_down:
-                            stride_count  += 1
-                            foot_was_down  = True
-                    else:
-                        foot_was_down = False
-                    put_label(frame, f"Strides: {stride_count}", 16, line_h, (255, 255, 255))
+                ground = max(l_ankle.y, r_ankle.y)
+                rel_scores.append((ground - b_wri.y) * 100)
 
-                # Hip Velocity
-                if l_hip.visibility > 0.5:
-                    curr_x = l_hip.x * w
-                    if prev_hip_x is not None:
-                        vel = abs(curr_x - prev_hip_x) / time_per_frame
-                        velocities.append(vel)
-                        put_label(frame, f"Vel: {int(vel)} px/s", 16, line_h * 2 + 4, (0, 242, 254))
-                    prev_hip_x = curr_x
+            # ── STRIDE ──
+            if l_ankle.visibility > 0.4 and r_ankle.visibility > 0.4:
+                if max(l_ankle.y, r_ankle.y) > 0.82:
+                    if not foot_was_down:
+                        stride_count += 1
+                        foot_was_down = True
+                else:
+                    foot_was_down = False
+                put_label(frame, f"Strides: {stride_count}", 16, line_h, (255,255,255))
+
+            # ── HIP VELOCITY ──
+            if l_hip.visibility > 0.4:
+                cx = l_hip.x * proc_w
+                if prev_hip_x is not None:
+                    vel = abs(cx - prev_hip_x) / tpf
+                    velocities.append(vel)
+                    put_label(frame, f"Vel: {int(vel)} px/s", 16, line_h*2+4, (0,242,254))
+                prev_hip_x = cx
 
             out.write(frame)
 
-        cap.release(); cap = None
-        out.release(); out = None
-        pose.close();  pose = None
+        # ── cleanup ──
+        cap.release();  cap  = None
+        out.release();  out  = None
+        pose.close();   pose = None
 
-        reencode_for_web(raw_output, output_path)
-
-        if os.path.exists(video_path):
-            try: os.remove(video_path)
-            except Exception: pass
+        reencode_for_web(raw_out, output_path)
+        try:   os.remove(video_path)
+        except Exception: pass
 
         summary = {
-            "strides":               stride_count,
-            "avg_l_knee":        int(np.mean(l_knee_angles))    if l_knee_angles   else 0,
-            "avg_r_knee":        int(np.mean(r_knee_angles))    if r_knee_angles   else 0,
-            "avg_release_score": round(float(np.mean(release_scores)), 1) if release_scores else 0,
-            "avg_velocity":      int(np.mean(velocities))        if velocities      else 0,
+            "strides":           stride_count,
+            "avg_l_knee":        int(np.mean(l_knee_angs))           if l_knee_angs  else 0,
+            "avg_r_knee":        int(np.mean(r_knee_angs))           if r_knee_angs  else 0,
+            "avg_release_score": round(float(np.mean(rel_scores)),1) if rel_scores   else 0,
+            "avg_velocity":      int(np.mean(velocities))            if velocities   else 0,
         }
 
         with jobs_lock:
             jobs[job_id] = {
                 'status':    'done',
                 'video_url': f'/static/{os.path.basename(output_path)}',
-                'summary':   summary
+                'summary':   summary,
             }
 
-    except Exception as e:
-        print(f"Job {job_id} failed: {e}")
-        if os.path.exists(video_path):
-            try: os.remove(video_path)
-            except Exception: pass
+    except Exception as exc:
+        print(f"Job {job_id} failed: {exc}")
+        try:   os.remove(video_path)
+        except Exception: pass
         with jobs_lock:
-            jobs[job_id] = {'status': 'error', 'error': str(e)}
+            jobs[job_id] = {'status': 'error', 'error': str(exc)}
     finally:
-        if pose:
-            try: pose.close()
-            except Exception: pass
-        if cap:
-            try: cap.release()
-            except Exception: pass
-        if out:
-            try: out.release()
-            except Exception: pass
+        for obj, m in [(pose,'close'),(cap,'release'),(out,'release')]:
+            if obj:
+                try: getattr(obj, m)()
+                except Exception: pass
 
+
+# ──────────────────────────────────────────────────────
+# FLASK ROUTES
+# ──────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
 @app.route('/health')
 def health():
     return jsonify({'status': 'ok'}), 200
-
 
 @app.route('/upload', methods=['POST'])
 def upload_video():
@@ -375,14 +392,13 @@ def upload_video():
     with jobs_lock:
         jobs[job_id] = {'status': 'processing'}
 
-    t = threading.Thread(
+    threading.Thread(
         target=process_bowling_video,
         args=(input_path, output_path, job_id),
-        daemon=True
-    )
-    t.start()
-    return jsonify({'job_id': job_id}), 202
+        daemon=True,
+    ).start()
 
+    return jsonify({'job_id': job_id}), 202
 
 @app.route('/status/<job_id>')
 def job_status(job_id):
@@ -392,11 +408,9 @@ def job_status(job_id):
         return jsonify({'status': 'not_found'}), 404
     return jsonify(job)
 
-
 @app.route('/static/<filename>')
 def serve_video(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
-
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
