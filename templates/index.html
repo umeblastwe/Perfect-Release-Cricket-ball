@@ -25,7 +25,6 @@
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.6; overflow-x: hidden; }
   body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.4; }
 
-  /* ── HERO ── */
   .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px 80px; text-align: center; overflow: hidden; }
   .hero::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,242,254,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
   .hero-badge { display: inline-block; border: 1px solid rgba(0,242,254,0.3); color: var(--cyan); font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; padding: 6px 18px; border-radius: 999px; margin-bottom: 28px; position: relative; z-index: 1; }
@@ -43,13 +42,11 @@
   .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--cyan), transparent); animation: scrollPulse 2s ease infinite; }
   @keyframes scrollPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-  /* ── STATS STRIP ── */
   .stats-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
   .stat-item { background: var(--bg); padding: 28px 20px; text-align: center; }
   .stat-number { font-family: var(--font-display); font-size: 2.8rem; color: var(--cyan); line-height: 1; }
   .stat-item .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
 
-  /* ── SECTIONS ── */
   .section { padding: 80px 24px; max-width: 960px; margin: 0 auto; position: relative; z-index: 1; }
   .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--cyan); margin-bottom: 12px; }
   .section-title { font-family: var(--font-display); font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; margin-bottom: 16px; }
@@ -63,7 +60,6 @@
   .step-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
   .divider { width: 100%; height: 1px; background: var(--border); position: relative; z-index: 1; }
 
-  /* ── ANGLE GUIDE CARD ── */
   .angle-guide { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 28px 20px; margin-bottom: 24px; }
   .angle-guide-title { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 1px; color: var(--cyan); margin-bottom: 6px; }
   .angle-guide-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; }
@@ -72,6 +68,7 @@
   .angle-badge { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 1px; padding: 6px 10px; border-radius: 8px; text-align: center; }
   .angle-badge.green  { background: rgba(34,197,94,0.12);  color: #22c55e; border: 1px solid rgba(34,197,94,0.25); }
   .angle-badge.amber  { background: rgba(245,230,66,0.10); color: #f5e642; border: 1px solid rgba(245,230,66,0.22); }
+  .angle-badge.red    { background: rgba(239,68,68,0.12);  color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
   .angle-badge.white  { background: rgba(232,234,242,0.07);color: #e8eaf2; border: 1px solid rgba(232,234,242,0.15); }
   .angle-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
   .angle-desc strong { color: var(--text); }
@@ -79,7 +76,6 @@
   .arc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .arc-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
 
-  /* ── ANALYZER TOOL ── */
   #analyzer { padding: 80px 24px 100px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
   .tool-header { text-align: center; margin-bottom: 40px; }
   .upload-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -94,7 +90,6 @@
   .btn-analyze { width: calc(100% - 48px); margin: 0 24px 24px; background: var(--cyan); color: #000; font-family: var(--font-body); font-weight: 700; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; padding: 16px; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; display: none; }
   .btn-analyze:hover { background: #2af8ff; box-shadow: 0 0 32px rgba(0,242,254,0.3); }
 
-  /* ── PROCESSING ── */
   .processing-panel { display: none; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; gap: 16px; }
   .radar-ring { position: relative; width: 80px; height: 80px; }
   .radar-ring::before, .radar-ring::after { content: ''; position: absolute; border-radius: 50%; border: 2px solid var(--cyan); animation: radarPulse 1.8s ease-out infinite; }
@@ -105,31 +100,30 @@
   .processing-label { font-family: var(--font-display); font-size: 1.6rem; color: var(--cyan); letter-spacing: 2px; }
   .processing-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 1px; }
 
-  /* ── RESULTS ── */
   .results-panel { display: none; flex-direction: column; }
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
   .stat-cell { background: var(--surface); padding: 20px 16px; text-align: center; }
-  .stat-cell .val { font-family: var(--font-display); font-size: 2.2rem; color: var(--cyan); line-height: 1; }
-  .stat-cell .lbl { font-size: 0.65rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+  .stat-cell.icc-cell { background: rgba(0,242,254,0.04); }
+  .stat-cell .val { font-family: var(--font-display); font-size: 2rem; color: var(--cyan); line-height: 1; }
+  .stat-cell .lbl { font-size: 0.62rem; color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; margin-top: 4px; }
   .video-wrap { background: #000; position: relative; }
   .video-wrap video { width: 100%; height: auto; display: block; }
-  .video-controls-strip { display: flex; align-items: center; justify-content: space-between; background: #121622; padding: 14px 20px; border-bottom: 1px solid var(--border); gap: 12px; }
-  .speed-selector-wrap { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text); font-weight: 500; letter-spacing: 0.5px; }
-  .speed-select { background: #1c2234; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-body); cursor: pointer; outline: none; transition: border-color 0.2s; }
+  .video-controls-strip { display: flex; align-items: center; justify-content: space-between; background: #121622; padding: 14px 20px; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
+  .speed-selector-wrap { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text); font-weight: 500; }
+  .speed-select { background: #1c2234; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-body); cursor: pointer; outline: none; }
   .speed-select:focus { border-color: var(--cyan); }
-  .btn-download-stream { background: var(--cyan); color: #000; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,242,254,0.2); transition: transform 0.2s; }
-  .btn-download-stream:hover { transform: translateY(-1px); background: #2af8ff; }
-  .perspective-notice { background: rgba(245,230,66,0.03); border-top: 1px solid rgba(245,230,66,0.1); border-bottom: 1px solid rgba(245,230,66,0.1); padding: 12px 20px; font-size: 0.75rem; color: #f5e642; display: flex; gap: 8px; align-items: center; line-height: 1.4; text-align: left; }
+  .btn-download-stream { background: var(--cyan); color: #000; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .perspective-notice { background: rgba(245,230,66,0.03); border-top: 1px solid rgba(245,230,66,0.1); border-bottom: 1px solid rgba(245,230,66,0.1); padding: 12px 20px; font-size: 0.75rem; color: #f5e642; display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; text-align: left; }
   .result-actions { display: flex; gap: 12px; padding: 20px 24px; border-top: 1px solid var(--border); }
-  .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; text-decoration: none; }
+  .btn-again { flex: 1; background: transparent; color: var(--text); font-family: var(--font-body); font-weight: 500; font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
   .btn-again:hover { border-color: var(--cyan); color: var(--cyan); }
 
-  /* ── RESULT STAT COLOURS ── */
   .val.good { color: #22c55e !important; }
   .val.warn { color: #f5e642 !important; }
   .val.poor { color: #e8eaf2 !important; }
+  .val.legal { color: #22c55e !important; font-size: 1.6rem !important; }
+  .val.illegal { color: #ef4444 !important; font-size: 1.6rem !important; }
 
-  /* ── REFERENCE GUIDE ── */
   .ref-section { padding: 0 24px 80px; max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
   .ref-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .ref-header { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
@@ -146,9 +140,10 @@
   .ref-metric.open .ref-rows { display: flex; }
   .ref-row { display: grid; grid-template-columns: 10px 1fr auto; align-items: start; gap: 12px; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); }
   .ref-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-  .dot-green  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
-  .dot-amber  { background: #f5e642; box-shadow: 0 0 6px rgba(245,230,66,0.4); }
-  .dot-white  { background: #e8eaf2; box-shadow: 0 0 4px rgba(232,234,242,0.3); }
+  .dot-green  { background: #22c55e; }
+  .dot-amber  { background: #f5e642; }
+  .dot-red    { background: #ef4444; }
+  .dot-white  { background: #e8eaf2; }
   .ref-desc { font-size: 0.8rem; color: var(--text); line-height: 1.45; }
   .ref-desc small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
   .ref-range { font-size: 0.78rem; font-weight: 600; color: var(--muted); white-space: nowrap; font-family: var(--font-display); letter-spacing: 0.5px; padding-top: 2px; }
@@ -161,22 +156,21 @@
   @media (max-width: 480px) {
     .steps-grid { grid-template-columns: 1fr; }
     .result-actions { flex-direction: column; }
-    .legend-strip { gap: 10px; }
     .angle-row { grid-template-columns: 80px 1fr; }
+    .stat-cell .val { font-size: 1.6rem; }
   }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
 <section class="hero">
-  <div class="hero-badge">Perfect Release Engine v2</div>
+  <div class="hero-badge">Perfect Release Engine v3 · ICC Calibrated</div>
   <h1 class="hero-title">
     <span class="line-white">PERFECT</span><br>
     <span class="line-cyan">RELEASE</span><br>
     <span class="line-yellow">AI</span>
   </h1>
-  <p class="hero-sub">Upload your bowling video. Our AI engine maps every joint in real-time and breaks down your biomechanics — stride, knee flex, release height.</p>
+  <p class="hero-sub">Upload your bowling video. 3D pose tracking measures ICC elbow extension, front/back leg angles, shoulder alignment, hip rotation, release height, and stride metrics.</p>
   <div class="hero-cta">
     <a href="#analyzer" class="btn-primary">Analyze My Action →</a>
     <a href="#how-it-works" class="btn-ghost">How it works</a>
@@ -185,422 +179,136 @@
 </section>
 
 <div class="stats-strip">
-  <div class="stat-item"><div class="stat-number">4</div><div class="stat-label">Core Metrics</div></div>
-  <div class="stat-item"><div class="stat-number">30+</div><div class="stat-label">Pose Landmarks</div></div>
-  <div class="stat-item"><div class="stat-number">AI</div><div class="stat-label">Powered Engine</div></div>
+  <div class="stat-item"><div class="stat-number">8</div><div class="stat-label">Core Metrics</div></div>
+  <div class="stat-item"><div class="stat-number">3D</div><div class="stat-label">Elbow Tracking</div></div>
+  <div class="stat-item"><div class="stat-number">15°</div><div class="stat-label">ICC Rule</div></div>
 </div>
-
- <!-- ═══════════════════════════ CAMERA GUIDE ══════════════════ -->
-<div class="divider"></div>
-<section class="ref-section" id="camera-guide" style="padding-top:0;">
-  <div style="text-align:center;margin-bottom:28px;padding-top:80px;">
-    <div class="section-label">Filming Guide</div>
-    <h2 class="section-title">How to shoot your video</h2>
-    <p class="section-body" style="margin:0 auto;">Camera angle directly affects analysis accuracy. Pick the view that matches your setup and film it right first time.</p>
-  </div>
-  
-
-<style>
-  h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-  .cam-section{padding:0;font-family:var(--font-sans)}
-  .cam-header{margin-bottom:20px}
-  .cam-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
-  .cam-tab{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 16px;font-size:13px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;transition:all .18s}
-  .cam-tab:hover{border-color:var(--color-border-secondary);color:var(--color-text-primary)}
-  .cam-tab.active{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
-  .cam-panels{}
-  .cam-panel{display:none}
-  .cam-panel.active{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:560px){.cam-panel.active{grid-template-columns:1fr}}
-  .cam-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
-  .cam-card.best{border:1.5px solid var(--color-border-success)}
-  .cam-card.good{border:1px solid var(--color-border-info)}
-  .cam-card.avoid{border:0.5px solid var(--color-border-danger);opacity:.85}
-  .badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px;margin-bottom:8px}
-  .badge-best{background:var(--color-background-success);color:var(--color-text-success)}
-  .badge-good{background:var(--color-background-info);color:var(--color-text-info)}
-  .badge-avoid{background:var(--color-background-danger);color:var(--color-text-danger)}
-  .cam-label{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
-  .cam-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.55}
-  .cam-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-  .chip{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
-  .tips-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:14px 16px;margin-top:16px;font-size:13px;color:var(--color-text-secondary);line-height:1.6}
-  .tips-box strong{color:var(--color-text-primary)}
-  .tip-row{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
-  .tip-icon{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:var(--color-background-info);display:flex;align-items:center;justify-content:center;margin-top:1px}
-  .tip-icon i{font-size:11px;color:var(--color-text-info)}
-</style>
-
-<h2 class="sr-only">Camera angle guide for bowling video analysis — shows best, acceptable, and angles to avoid for each view type</h2>
-
-<div class="cam-section">
-  <div class="cam-tabs">
-    <button class="cam-tab active" onclick="switchTab('side')">Side-on view</button>
-    <button class="cam-tab" onclick="switchTab('back')">Behind the bowler</button>
-    <button class="cam-tab" onclick="switchTab('front')">Front-on view</button>
-  </div>
-
-  <!-- SIDE-ON -->
-  <div class="cam-panel active" id="panel-side">
-
-    <div class="cam-card best">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-        <!-- pitch -->
-        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
-        <!-- bowler stick figure -->
-        <circle cx="230" cy="80" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="230" y1="89" x2="230" y2="130" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="230" y1="105" x2="215" y2="95" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="230" y1="105" x2="252" y2="90" stroke="#3B8BD4" stroke-width="2.5"/>
-        <line x1="230" y1="130" x2="218" y2="148" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="230" y1="130" x2="244" y2="150" stroke="#3B8BD4" stroke-width="2"/>
-        <!-- camera icon -->
-        <rect x="20" y="94" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
-        <circle cx="37" cy="105" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
-        <circle cx="37" cy="105" r="2.5" fill="#888"/>
-        <rect x="27" y="90" width="10" height="5" rx="2" fill="#888"/>
-        <!-- fov cone -->
-        <path d="M54 105 L100 76 L100 134 Z" fill="#3B8BD4" opacity=".08"/>
-        <line x1="54" y1="105" x2="260" y2="76" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <line x1="54" y1="105" x2="260" y2="134" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <!-- height label -->
-        <line x1="285" y1="70" x2="285" y2="148" stroke="#888" stroke-width="1" stroke-dasharray="3 3"/>
-        <line x1="278" y1="70" x2="292" y2="70" stroke="#888" stroke-width="1"/>
-        <line x1="278" y1="148" x2="292" y2="148" stroke="#888" stroke-width="1"/>
-        <text x="300" y="112" font-size="10" fill="#888" dominant-baseline="central" font-family="sans-serif">hip</text>
-        <text x="300" y="125" font-size="10" fill="#888" dominant-baseline="central" font-family="sans-serif">ht</text>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-best">Best</div>
-        <div class="cam-label">True side-on (90°)</div>
-        <div class="cam-desc">Camera placed directly perpendicular to the bowling crease. Captures the full action plane — run-up, delivery stride, arm swing, and follow-through all visible in one frame.</div>
-        <div class="cam-meta">
-          <span class="chip">Knee angles accurate</span>
-          <span class="chip">Full stride visible</span>
-          <span class="chip">Release height clear</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cam-card good">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
-        <circle cx="220" cy="82" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="220" y1="91" x2="222" y2="130" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="222" y1="108" x2="207" y2="98" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="222" y1="108" x2="244" y2="94" stroke="#3B8BD4" stroke-width="2.5"/>
-        <line x1="222" y1="130" x2="210" y2="150" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="222" y1="130" x2="236" y2="152" stroke="#3B8BD4" stroke-width="2"/>
-        <!-- camera at 45deg -->
-        <rect x="30" y="54" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5" transform="rotate(-30 47 65)"/>
-        <circle cx="47" cy="65" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
-        <circle cx="47" cy="65" r="2.5" fill="#888"/>
-        <!-- fov -->
-        <path d="M60 78 L140 55 L140 120 Z" fill="#3B8BD4" opacity=".07"/>
-        <line x1="60" y1="78" x2="255" y2="58" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".35"/>
-        <line x1="60" y1="78" x2="255" y2="128" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".35"/>
-        <!-- angle arc -->
-        <path d="M 90 128 A 30 30 0 0 1 112 106" fill="none" stroke="#f5a623" stroke-width="1.5"/>
-        <text x="106" y="136" font-size="10" fill="#f5a623" font-family="sans-serif">~45°</text>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-good">Acceptable</div>
-        <div class="cam-label">Diagonal (30–60°)</div>
-        <div class="cam-desc">A 30–60° angle off the crease line. Slightly inflates depth perception — elbow extension readings may be marginally higher. The AI calibrates for this.</div>
-        <div class="cam-meta">
-          <span class="chip">Knee angles ~ok</span>
-          <span class="chip">Some parallax</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BEHIND -->
-  <div class="cam-panel" id="panel-back">
-
-    <div class="cam-card best">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <!-- top-down schematic -->
-        <!-- pitch from above -->
-        <rect x="130" y="30" width="60" height="150" rx="4" fill="#7DB87D" opacity=".2"/>
-        <!-- crease line -->
-        <line x1="110" y1="145" x2="210" y2="145" stroke="#888" stroke-width="1" stroke-dasharray="5 3"/>
-        <text x="212" y="148" font-size="9" fill="#888" font-family="sans-serif" dominant-baseline="central">crease</text>
-        <!-- bowler from above (oval) -->
-        <ellipse cx="160" cy="115" rx="8" ry="11" fill="#3B8BD4" opacity=".7"/>
-        <!-- run-up arrow -->
-        <line x1="160" y1="38" x2="160" y2="100" stroke="#3B8BD4" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a2)" opacity=".5"/>
-        <!-- camera behind -->
-        <rect x="143" y="162" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
-        <circle cx="160" cy="173" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
-        <circle cx="160" cy="173" r="2.5" fill="#888"/>
-        <!-- fov lines -->
-        <line x1="160" y1="162" x2="120" y2="40" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
-        <line x1="160" y1="162" x2="200" y2="40" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
-        <!-- optimal label -->
-        <text x="160" y="20" font-size="10" fill="#3B8BD4" text-anchor="middle" font-family="sans-serif">Stumps direction</text>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-best">Best</div>
-        <div class="cam-label">Directly behind (0°)</div>
-        <div class="cam-desc">Camera placed directly behind the bowler along the pitch axis. Best view for elbow extension tracking — the arm swing is fully in the sagittal plane relative to the lens.</div>
-        <div class="cam-meta">
-          <span class="chip">Elbow angle accurate</span>
-          <span class="chip">Side body visible</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cam-card avoid">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <rect x="130" y="30" width="60" height="150" rx="4" fill="#7DB87D" opacity=".2"/>
-        <line x1="110" y1="145" x2="210" y2="145" stroke="#888" stroke-width="1" stroke-dasharray="5 3"/>
-        <ellipse cx="160" cy="115" rx="8" ry="11" fill="#3B8BD4" opacity=".7"/>
-        <line x1="160" y1="38" x2="160" y2="100" stroke="#3B8BD4" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a2)" opacity=".5"/>
-        <!-- camera far left (front-on) -->
-        <rect x="60" y="106" width="34" height="22" rx="4" fill="none" stroke="#E24B4A" stroke-width="1.5"/>
-        <circle cx="77" cy="117" r="6" fill="none" stroke="#E24B4A" stroke-width="1.2"/>
-        <circle cx="77" cy="117" r="2.5" fill="#E24B4A"/>
-        <!-- fov lines -->
-        <line x1="94" y1="117" x2="260" y2="78" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <line x1="94" y1="117" x2="260" y2="156" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <!-- X mark -->
-        <text x="77" y="82" font-size="20" fill="#E24B4A" text-anchor="middle" font-family="sans-serif">✕</text>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-avoid">Avoid</div>
-        <div class="cam-label">Side-on (90° offset)</div>
-        <div class="cam-desc">Camera to the side when using "behind" analysis mode. The bowling arm appears foreshortened — elbow extension readings become unreliable and stride depth is lost.</div>
-        <div class="cam-meta">
-          <span class="chip">Foreshortening</span>
-          <span class="chip">Arm depth lost</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FRONT -->
-  <div class="cam-panel" id="panel-front">
-
-    <div class="cam-card good">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
-        <!-- bowler front-facing -->
-        <circle cx="160" cy="72" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="81" x2="160" y2="128" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="100" x2="135" y2="88" stroke="#3B8BD4" stroke-width="2.5"/>
-        <line x1="160" y1="100" x2="185" y2="92" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="128" x2="148" y2="150" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="128" x2="172" y2="152" stroke="#3B8BD4" stroke-width="2"/>
-        <!-- camera front -->
-        <rect x="143" y="162" width="34" height="22" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>
-        <circle cx="160" cy="173" r="6" fill="none" stroke="#888" stroke-width="1.2"/>
-        <circle cx="160" cy="173" r="2.5" fill="#888"/>
-        <!-- fov -->
-        <line x1="160" y1="162" x2="80" y2="60" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
-        <line x1="160" y1="162" x2="240" y2="60" stroke="#3B8BD4" stroke-width="1" stroke-dasharray="4 3" opacity=".3"/>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-good">Acceptable</div>
-        <div class="cam-label">Front-on (facing you)</div>
-        <div class="cam-desc">Camera positioned at the batting end. Great for viewing chest-on vs side-on action and shoulder alignment. Elbow extension has known parallax — the AI applies front-on calibration automatically.</div>
-        <div class="cam-meta">
-          <span class="chip">Shoulder angle clear</span>
-          <span class="chip">Parallax notice shown</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="cam-card avoid">
-      <svg width="100%" viewBox="0 0 320 200" style="display:block">
-        <!-- low angle poor -->
-        <rect x="60" y="120" width="200" height="8" rx="3" fill="#7DB87D" opacity=".35"/>
-        <circle cx="160" cy="72" r="9" fill="none" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="81" x2="160" y2="128" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="100" x2="135" y2="88" stroke="#3B8BD4" stroke-width="2.5"/>
-        <line x1="160" y1="100" x2="185" y2="92" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="128" x2="148" y2="150" stroke="#3B8BD4" stroke-width="2"/>
-        <line x1="160" y1="128" x2="172" y2="152" stroke="#3B8BD4" stroke-width="2"/>
-        <!-- camera very low / ground level -->
-        <rect x="143" y="183" width="34" height="14" rx="3" fill="none" stroke="#E24B4A" stroke-width="1.5"/>
-        <circle cx="160" cy="190" r="4" fill="none" stroke="#E24B4A" stroke-width="1.2"/>
-        <circle cx="160" cy="190" r="1.5" fill="#E24B4A"/>
-        <!-- fov lines very steep -->
-        <line x1="160" y1="183" x2="90" y2="40" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <line x1="160" y1="183" x2="230" y2="40" stroke="#E24B4A" stroke-width="1" stroke-dasharray="4 3" opacity=".4"/>
-        <text x="160" y="178" font-size="20" fill="#E24B4A" text-anchor="middle" font-family="sans-serif">✕</text>
-      </svg>
-      <div style="padding:14px 16px">
-        <div class="badge badge-avoid">Avoid</div>
-        <div class="cam-label">Ground-level or overhead</div>
-        <div class="cam-desc">Phone placed on the ground or held above the head. Extreme vertical angles collapse joint height data — knee angles and release height scores become inaccurate.</div>
-        <div class="cam-meta">
-          <span class="chip">Heights distorted</span>
-          <span class="chip">Knee data unreliable</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Universal tips -->
-  <div class="tips-box">
-    <strong>Universal filming tips</strong>
-    <div class="tip-row"><div class="tip-icon"><i class="ti ti-device-mobile-camera" aria-hidden="true"></i></div><span>Film in <strong>landscape mode</strong> at 1080p or higher. Slow-motion (120–240fps) gives the most accurate joint tracking.</span></div>
-    <div class="tip-row"><div class="tip-icon"><i class="ti ti-ruler" aria-hidden="true"></i></div><span>Place the tripod or phone stand so the <strong>camera is at hip height</strong> and the entire run-up fits in frame.</span></div>
-    <div class="tip-row"><div class="tip-icon"><i class="ti ti-sun" aria-hidden="true"></i></div><span>Shoot with the <strong>light behind the camera</strong> — avoid backlighting the bowler against a bright sky.</span></div>
-    <div class="tip-row"><div class="tip-icon"><i class="ti ti-arrows-move" aria-hidden="true"></i></div><span>Keep the camera <strong>stationary</strong> throughout. Panning during the action degrades landmark tracking accuracy.</span></div>
-  </div>
-</div>
-
-<script>
-function switchTab(id){
-  document.querySelectorAll('.cam-tab').forEach((t,i)=>{
-    const ids=['side','back','front'];
-    t.classList.toggle('active', ids[i]===id);
-  });
-  document.querySelectorAll('.cam-panel').forEach(p=>{
-    p.classList.toggle('active', p.id==='panel-'+id);
-  });
-}
-</script>
-
-</section>
 
 <div class="divider"></div>
 
-<!-- ═══════════════════════════ HOW IT WORKS ═══════════════════ -->
 <section class="section" id="how-it-works">
   <div class="section-label">Process</div>
   <h2 class="section-title">Three steps.<br>Full breakdown.</h2>
-  <p class="section-body">No app download. No signup. Upload your clip and get a fully annotated biomechanics analysis video back in minutes.</p>
+  <p class="section-body">Film side-on or behind the bowler for best ICC elbow accuracy. Upload your clip and get a fully annotated analysis video back in minutes.</p>
   <div class="steps-grid">
     <div class="step-card">
       <div class="step-num">01</div>
       <div class="step-icon">🎥</div>
       <div class="step-title">Upload Your Clip</div>
-      <div class="step-desc">Select any bowling video from your camera roll. Slow-motion footage gives the best results.</div>
+      <div class="step-desc">Side-on (90°) or behind-the-bowler views give the most accurate ICC elbow extension reading.</div>
     </div>
     <div class="step-card">
       <div class="step-num">02</div>
       <div class="step-icon">🧠</div>
-      <div class="step-title">AI Processes It</div>
-      <div class="step-desc">MediaPipe maps 33 body landmarks per frame. Knee angles, elbow extension, release height — all computed automatically with colour-coded angle arcs.</div>
+      <div class="step-title">3D AI Processes It</div>
+      <div class="step-desc">MediaPipe world landmarks compute true 3D elbow angles. Extension is measured from horizontal arm position to release — exactly as ICC testing protocols define it.</div>
     </div>
     <div class="step-card">
       <div class="step-num">03</div>
       <div class="step-icon">📊</div>
       <div class="step-title">Review & Improve</div>
-      <div class="step-desc">Watch the annotated video with live angle overlays and check your summary stats to identify what to work on.</div>
+      <div class="step-desc">Watch annotated video with live overlays for all 8 metrics and check your summary against professional benchmarks.</div>
     </div>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- ═══════════════════════════ ANALYZER ══════════════════════ -->
 <section id="analyzer">
   <div class="tool-header">
     <div class="section-label">Live Tool</div>
     <h2 class="section-title" style="text-align:center">Analyze Your Action</h2>
-    <p class="section-body" style="margin:12px auto 0;text-align:center">Processing takes 1–3 minutes depending on video length. Keep this tab open.</p>
+    <p class="section-body" style="margin:12px auto 0;text-align:center">Processing takes 1–3 minutes. Side-on filming strongly recommended for ICC elbow accuracy.</p>
   </div>
 
-  <!-- Angle Guide -->
-  <div style="max-width:680px;margin:0 auto 28px;padding:0 0px;">
+  <div style="max-width:680px;margin:0 auto 28px;">
     <div class="angle-guide">
-      <div class="angle-guide-title">📐 WHAT TO LOOK FOR IN YOUR VIDEO</div>
-      <div class="angle-guide-sub">The AI draws a colour-coded arc at each joint. Here's how to read it:</div>
-
+      <div class="angle-guide-title">📐 ICC ELBOW EXTENSION (LAW 21)</div>
+      <div class="angle-guide-sub">Extension = elbow angle at release minus elbow angle when upper arm reaches horizontal. No scaling — direct degrees.</div>
       <div class="angle-rows">
-        <!-- Knee angles -->
-        <div style="font-size:0.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:4px;margin-top:4px;">🦵 Knee Angle (hip → knee → ankle)</div>
+        <div class="angle-row">
+          <div class="angle-badge green">0°–15°</div>
+          <div class="angle-desc"><strong>LEGAL</strong> — Arm straightens no more than 15° from horizontal to release. Green overlay on video.</div>
+        </div>
+        <div class="angle-row">
+          <div class="angle-badge red">&gt; 15°</div>
+          <div class="angle-desc"><strong>ILLEGAL THROW</strong> — Exceeds ICC maximum extension. Red overlay flags this on the annotated video.</div>
+        </div>
+        <div style="font-size:0.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-top:14px;">🦵 Front / Back Leg (at delivery)</div>
         <div class="angle-row">
           <div class="angle-badge green">165°–180°</div>
-          <div class="angle-desc"><strong>Green arc</strong> — Nearly straight leg at delivery. Maximum energy transfer. Ideal for pace bowlers.</div>
+          <div class="angle-desc"><strong>Front leg</strong> — Braced and extended at landing. Drives pace through the crease.</div>
         </div>
         <div class="angle-row">
           <div class="angle-badge amber">140°–164°</div>
-          <div class="angle-desc"><strong>Amber arc</strong> — Slight bend. Acceptable for medium-pace; work on straightening for extra speed.</div>
-        </div>
-        <div class="angle-row">
-          <div class="angle-badge white">&lt; 140°</div>
-          <div class="angle-desc"><strong>White arc</strong> — Significant knee bend. Loss of pace, increased injury risk. Focus on front-foot landing drills.</div>
-        </div>
-
-        <!-- Elbow extension -->
-        <div style="font-size:0.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:4px;margin-top:14px;">💪 Elbow Extension (shoulder → elbow → wrist)</div>
-        <div class="angle-row">
-          <div class="angle-badge green" style="font-size:0.85rem;">Elbow Angle</div>
-          <div class="angle-desc"><strong>Cyan arc at elbow</strong> — Shows real-time 3D elbow angle. A straighter arm (closer to 180°) means more leverage at release. <em>Elbow Ext</em> shows how much the arm extends past horizontal.</div>
+          <div class="angle-desc"><strong>Back leg</strong> — Trail leg push-off angle. Higher = stronger drive.</div>
         </div>
       </div>
-
       <div class="arc-legend">
-        <div class="arc-legend-item"><div class="arc-dot" style="background:#22c55e;box-shadow:0 0 5px rgba(34,197,94,0.6);"></div> Green = Excellent</div>
-        <div class="arc-legend-item"><div class="arc-dot" style="background:#f5e642;box-shadow:0 0 5px rgba(245,230,66,0.5);"></div> Amber = Improve</div>
-        <div class="arc-legend-item"><div class="arc-dot" style="background:#e8eaf2;"></div> White = Needs Work</div>
-        <div class="arc-legend-item"><div class="arc-dot" style="background:#00f2fe;box-shadow:0 0 5px rgba(0,242,254,0.5);"></div> Cyan = Elbow Tracking</div>
+        <div class="arc-legend-item"><div class="arc-dot" style="background:#00f2fe;"></div> Cyan = Bowling arm elbow</div>
+        <div class="arc-legend-item"><div class="arc-dot" style="background:#22c55e;"></div> Green = Legal ICC</div>
+        <div class="arc-legend-item"><div class="arc-dot" style="background:#ef4444;"></div> Red = Illegal &gt;15°</div>
       </div>
     </div>
   </div>
 
-  <!-- Upload Card -->
   <div class="upload-card" id="upload-card">
     <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
       <div class="uz-icon">⚡</div>
       <div class="uz-title">Drop your bowling video here</div>
-      <div class="uz-sub">or click to browse · MP4, MOV, slow-mo supported</div>
+      <div class="uz-sub">Side-on or behind view · MP4, MOV, slow-mo supported</div>
       <input type="file" id="file-input" accept="video/*">
     </div>
     <div class="file-preview" id="file-preview">
       <span>📹</span>
       <span class="file-name" id="file-name-label">video.mp4</span>
-      <span id="file-size-label" style="color:var(--muted);font-size:0.75rem;white-space:nowrap;"></span>
+      <span id="file-size-label" style="color:var(--muted);font-size:0.75rem;"></span>
     </div>
     <button class="btn-analyze" id="btn-analyze" onclick="startUpload()">⚡ Analyze Biomechanics</button>
   </div>
 
-  <!-- Processing Panel -->
   <div class="upload-card" id="processing-panel" style="display:none;">
     <div class="processing-panel" style="display:flex;">
       <div class="radar-ring"><div class="radar-dot"></div></div>
       <div class="processing-label">ANALYSING</div>
-      <div class="processing-sub" id="processing-sub-text">Mapping joints · Computing angles · 0s elapsed</div>
+      <div class="processing-sub" id="processing-sub-text">Mapping 3D joints · ICC elbow check · 0s elapsed</div>
     </div>
   </div>
 
-  <!-- Results Panel -->
   <div class="upload-card" id="results-panel" style="display:none;">
     <div class="results-panel" style="display:flex;">
       <div class="video-wrap"><video id="output-player" controls playsinline></video></div>
-
       <div class="video-controls-strip">
         <div class="speed-selector-wrap">
           <span>⚡ Speed:</span>
           <select class="speed-select" id="video-speed-controller" onchange="adjustPlaybackSpeed(this.value)">
-            <option value="0.25">0.25x — Super Slow</option>
-            <option value="0.5">0.5x — Slow</option>
-            <option value="1.0" selected>1.0x — Normal</option>
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="1.0" selected>1.0x</option>
           </select>
         </div>
         <a class="btn-download-stream" id="video-download-anchor" href="#" target="_blank">💾 Download</a>
       </div>
 
       <div class="stats-grid">
-        <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Strides</div></div>
-        <div class="stat-cell"><div class="val" id="st-lknee">—</div><div class="lbl">Avg L Knee</div></div>
-        <div class="stat-cell"><div class="val" id="st-rknee">—</div><div class="lbl">Avg R Knee</div></div>
-        <div class="stat-cell"><div class="val" id="st-rel">—</div><div class="lbl">Release Score</div></div>
-        <div class="stat-cell" style="grid-column:span 2;"><div class="val" id="st-vel">—</div><div class="lbl">Approach Velocity (px/s)</div></div>
+        <div class="stat-cell icc-cell"><div class="val" id="st-icc-ext">—</div><div class="lbl">ICC Elbow Extension</div></div>
+        <div class="stat-cell icc-cell"><div class="val" id="st-icc-legal">—</div><div class="lbl">ICC Status</div></div>
+        <div class="stat-cell"><div class="val" id="st-release-ang">—</div><div class="lbl">Elbow at Release</div></div>
+        <div class="stat-cell"><div class="val" id="st-front-knee">—</div><div class="lbl">Front Leg Angle</div></div>
+        <div class="stat-cell"><div class="val" id="st-back-knee">—</div><div class="lbl">Back Leg Angle</div></div>
+        <div class="stat-cell"><div class="val" id="st-shoulder">—</div><div class="lbl">Shoulder Alignment</div></div>
+        <div class="stat-cell"><div class="val" id="st-hip-rot">—</div><div class="lbl">Hip Rotation</div></div>
+        <div class="stat-cell"><div class="val" id="st-rel">—</div><div class="lbl">Release Height</div></div>
+        <div class="stat-cell"><div class="val" id="st-runup">—</div><div class="lbl">Run-up Length</div></div>
+        <div class="stat-cell"><div class="val" id="st-stride-len">—</div><div class="lbl">Delivery Stride</div></div>
+        <div class="stat-cell"><div class="val" id="st-strides">—</div><div class="lbl">Stride Count</div></div>
+        <div class="stat-cell"><div class="val" id="st-vel">—</div><div class="lbl">Approach Velocity</div></div>
       </div>
 
       <div class="perspective-notice">
         <span>⚠️</span>
-        <div><strong>2D Parallax Note:</strong> Front-on or diagonal camera angles can inflate extension readings. Biomechanical thresholds are calibrated to compensate for angular parallax.</div>
+        <div><strong>Accuracy note:</strong> ICC elbow extension uses 3D world landmarks when available. Side-on (90°) or behind-the-bowler filming gives the most reliable reading. Front-on views may show parallax — compare session-to-session using the same camera angle.</div>
       </div>
-
       <div class="result-actions">
         <button class="btn-again" onclick="resetTool()">↩ Upload Another Video</button>
       </div>
@@ -610,220 +318,132 @@ function switchTab(id){
 
 <div class="divider"></div>
 
-<!-- ═══════════════════════════ BENCHMARKS ════════════════════ -->
 <section class="ref-section" id="benchmarks">
   <div style="text-align:center;margin-bottom:28px;padding-top:80px;">
     <div class="section-label">Reference Guide</div>
     <h2 class="section-title">What do your numbers mean?</h2>
-    <p class="section-body" style="margin:0 auto;">Use these benchmarks to read your results. Tap each metric to expand.</p>
+    <p class="section-body" style="margin:0 auto;">Tap each metric to expand. ICC extension is the primary legal compliance check.</p>
   </div>
-
   <div class="ref-card">
     <div class="ref-header">
       <div class="ref-header-title">BIOMECHANICS BENCHMARKS</div>
-      <div class="ref-header-sub">Based on professional cricket bowling standards</div>
+      <div class="ref-header-sub">ICC Law 21 · Professional fast bowling standards</div>
     </div>
 
-    <!-- Knee Angle -->
     <div class="ref-metric open" onclick="toggleRef(this)">
       <div class="ref-metric-header">
-        <span class="ref-metric-icon">🦵</span>
-        <span class="ref-metric-name">Knee Angle — L &amp; R (hip → knee → ankle)</span>
+        <span class="ref-metric-icon">⚖️</span>
+        <span class="ref-metric-name">ICC Elbow Extension (Law 21)</span>
         <span class="ref-chevron">▼</span>
       </div>
       <div class="ref-rows">
         <div class="ref-row">
           <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">
-            <strong>Green arc on video</strong> — Stride leg nearly fully extended at delivery. Maximum energy transfer from run-up to ball.
-            <small>Ideal for fast bowlers. Both knees should trend toward this zone.</small>
-          </div>
-          <div class="ref-range">165°–180°</div>
+          <div class="ref-desc"><strong>0°–15° extension</strong> — Legal action. Measured from when upper arm is horizontal to ball release.<small>Uses 3D elbow angle — peak minus angle-at-horizontal.</small></div>
+          <div class="ref-range">≤ 15°</div>
         </div>
         <div class="ref-row">
-          <div class="ref-dot dot-amber"></div>
-          <div class="ref-desc">
-            <strong>Amber arc on video</strong> — Slight bend. Reduces pace but manageable for medium-pace or swing bowlers.
-            <small>Work on extending the front knee to push into the green zone.</small>
-          </div>
-          <div class="ref-range">140°–164°</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-white"></div>
-          <div class="ref-desc">
-            <strong>White arc on video</strong> — Significant knee bend collapses your base. Loss of pace, increased injury risk.
-            <small>Focus on front-foot landing drills and crease stability exercises.</small>
-          </div>
-          <div class="ref-range">&lt; 140°</div>
+          <div class="ref-dot dot-red"></div>
+          <div class="ref-desc"><strong>&gt; 15° extension</strong> — Exceeds ICC limit. Classified as throwing.<small>Film side-on for most accurate ICC reading.</small></div>
+          <div class="ref-range">&gt; 15°</div>
         </div>
       </div>
     </div>
 
-    <!-- Elbow Extension -->
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
-        <span class="ref-metric-icon">💪</span>
-        <span class="ref-metric-name">Elbow Angle &amp; Extension (shoulder → elbow → wrist)</span>
+        <span class="ref-metric-icon">🦵</span>
+        <span class="ref-metric-name">Front Leg Angle (landing leg)</span>
         <span class="ref-chevron">▼</span>
       </div>
       <div class="ref-rows">
-        <div class="ref-row">
-          <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">
-            <strong>Elbow Angle ≈ 160°–180°</strong> — Arm close to fully straight through delivery. Maximum leverage, steep bounce angle, more pace.
-            <small>Naturally varies by bowler height and action style.</small>
-          </div>
-          <div class="ref-range">160°–180°</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-amber"></div>
-          <div class="ref-desc">
-            <strong>Elbow Ext 0°–15°</strong> — The extension delta (how much the arm opens past horizontal). Within normal range for most legal actions.
-            <small>Elbow Ext is the change from the horizontal reference point, not the absolute angle.</small>
-          </div>
-          <div class="ref-range">0°–15° ext</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-white"></div>
-          <div class="ref-desc">
-            <strong>Elbow Angle &lt; 130°</strong> — Notably bent elbow at delivery. Can reduce pace and affect release consistency.
-            <small>Check wrist and shoulder mobility — a tight posterior capsule often causes this.</small>
-          </div>
-          <div class="ref-range">&lt; 130°</div>
-        </div>
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc">Braced front knee at delivery — maximum pace transfer.</div><div class="ref-range">165°–180°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-amber"></div><div class="ref-desc">Slight collapse — work on bracing drills.</div><div class="ref-range">140°–164°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-white"></div><div class="ref-desc">Significant collapse — pace and injury risk.</div><div class="ref-range">&lt; 140°</div></div>
       </div>
     </div>
 
-    <!-- Release Height -->
+    <div class="ref-metric" onclick="toggleRef(this)">
+      <div class="ref-metric-header">
+        <span class="ref-metric-icon">🦿</span>
+        <span class="ref-metric-name">Back Leg Angle (trail leg push-off)</span>
+        <span class="ref-chevron">▼</span>
+      </div>
+      <div class="ref-rows">
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc">Strong trail leg drive into delivery stride.</div><div class="ref-range">165°–180°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-amber"></div><div class="ref-desc">Moderate push-off — room to drive harder.</div><div class="ref-range">140°–164°</div></div>
+      </div>
+    </div>
+
+    <div class="ref-metric" onclick="toggleRef(this)">
+      <div class="ref-metric-header">
+        <span class="ref-metric-icon">↔️</span>
+        <span class="ref-metric-name">Shoulder Alignment</span>
+        <span class="ref-chevron">▼</span>
+      </div>
+      <div class="ref-rows">
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc">Side-on alignment (0°–30°) — best for knee and ICC metrics.</div><div class="ref-range">0°–30°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-amber"></div><div class="ref-desc">Mixed chest/side (30°–60°) — acceptable with calibration.</div><div class="ref-range">30°–60°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-white"></div><div class="ref-desc">Chest-on (&gt;60°) — parallax affects elbow and knee readings.</div><div class="ref-range">&gt; 60°</div></div>
+      </div>
+    </div>
+
+    <div class="ref-metric" onclick="toggleRef(this)">
+      <div class="ref-metric-header">
+        <span class="ref-metric-icon">🔄</span>
+        <span class="ref-metric-name">Hip Rotation</span>
+        <span class="ref-chevron">▼</span>
+      </div>
+      <div class="ref-rows">
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc">Strong hip drive through delivery — power generation.</div><div class="ref-range">15°–45°</div></div>
+        <div class="ref-row"><div class="ref-dot dot-amber"></div><div class="ref-desc">Limited rotation — may reduce pace.</div><div class="ref-range">5°–14°</div></div>
+      </div>
+    </div>
+
     <div class="ref-metric" onclick="toggleRef(this)">
       <div class="ref-metric-header">
         <span class="ref-metric-icon">📏</span>
-        <span class="ref-metric-name">Release Height Score</span>
+        <span class="ref-metric-name">Release Height · Run-up · Stride</span>
         <span class="ref-chevron">▼</span>
       </div>
       <div class="ref-rows">
-        <div class="ref-row">
-          <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">Ball released well above head height relative to ground. Maximum leverage and steep bounce angle.
-            <small>Taller bowlers naturally score higher — compare against your own baseline over time.</small>
-          </div>
-          <div class="ref-range">&gt; 35 pts</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-amber"></div>
-          <div class="ref-desc">Decent release point. Some leverage lost; a flatter trajectory may result.
-            <small>Try extending fully through the crease on your delivery stride.</small>
-          </div>
-          <div class="ref-range">20–35 pts</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-white"></div>
-          <div class="ref-desc">Low release point — ball arrives flatter and is easier to hit.
-            <small>Check if front-knee collapse is pulling your release point down.</small>
-          </div>
-          <div class="ref-range">&lt; 20 pts</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Stride Count -->
-    <div class="ref-metric" onclick="toggleRef(this)">
-      <div class="ref-metric-header">
-        <span class="ref-metric-icon">👟</span>
-        <span class="ref-metric-name">Stride Count</span>
-        <span class="ref-chevron">▼</span>
-      </div>
-      <div class="ref-rows">
-        <div class="ref-row">
-          <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">Consistent run-up length. Enough momentum without over-striding.
-            <small>Most professional fast bowlers use 12–18 strides.</small>
-          </div>
-          <div class="ref-range">10–20</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-amber"></div>
-          <div class="ref-desc">Short run-up — less pace generated. Fine for medium-pace or spin bowlers.
-            <small>Extend run-up gradually to build rhythm and momentum.</small>
-          </div>
-          <div class="ref-range">5–9</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-white"></div>
-          <div class="ref-desc">Very short or tracking gap — either a short clip or AI lost tracking. Check footage length.
-            <small>Ensure the full run-up is visible in frame.</small>
-          </div>
-          <div class="ref-range">0–4</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Run-up Velocity -->
-    <div class="ref-metric" onclick="toggleRef(this)">
-      <div class="ref-metric-header">
-        <span class="ref-metric-icon">⚡</span>
-        <span class="ref-metric-name">Run-up Velocity (px/s)</span>
-        <span class="ref-chevron">▼</span>
-      </div>
-      <div class="ref-rows">
-        <div class="ref-row">
-          <div class="ref-dot dot-green"></div>
-          <div class="ref-desc">Strong approach momentum driving into the crease.
-            <small>Value depends on video resolution and camera distance — track relative change session-to-session.</small>
-          </div>
-          <div class="ref-range">&gt; 300</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-amber"></div>
-          <div class="ref-desc">Moderate approach — enough momentum for medium-pace. May limit top-end speed.
-            <small>Work on controlled acceleration through the last 5–6 strides.</small>
-          </div>
-          <div class="ref-range">100–300</div>
-        </div>
-        <div class="ref-row">
-          <div class="ref-dot dot-white"></div>
-          <div class="ref-desc">Slow approach or static shot — very limited momentum or camera position affecting reading.
-            <small>Ensure the bowler moves clearly through the full frame.</small>
-          </div>
-          <div class="ref-range">&lt; 100</div>
-        </div>
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc"><strong>Release height</strong> &gt;35 pts — high release point.</div><div class="ref-range">&gt; 35</div></div>
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc"><strong>Run-up length</strong> &gt;80% body height — full momentum build.</div><div class="ref-range">&gt; 80%</div></div>
+        <div class="ref-row"><div class="ref-dot dot-green"></div><div class="ref-desc"><strong>Delivery stride</strong> 70–120% body height — optimal reach at landing.</div><div class="ref-range">70–120%</div></div>
       </div>
     </div>
 
     <div class="legend-strip">
-      <div class="legend-item"><div class="ref-dot dot-green"></div> Green — Perfect</div>
-      <div class="legend-item"><div class="ref-dot dot-amber"></div> Amber — Room to improve</div>
-      <div class="legend-item"><div class="ref-dot dot-white"></div> White — Needs work</div>
+      <div class="legend-item"><div class="ref-dot dot-green"></div> Green — On target</div>
+      <div class="legend-item"><div class="ref-dot dot-amber"></div> Amber — Improve</div>
+      <div class="legend-item"><div class="ref-dot dot-red"></div> Red — ICC illegal</div>
     </div>
   </div>
 </section>
 
 <footer>
-  <p>Perfect Release AI · <span>Beta</span> · Built for cricket &amp; bowling athletes</p>
-  <p style="margin-top:8px;font-size:0.72rem;">AI analysis is a training aid, not a substitute for professional coaching.</p>
+  <p>Perfect Release AI · <span>v3 ICC Calibrated</span> · Built for cricket athletes</p>
+  <p style="margin-top:8px;font-size:0.72rem;">AI analysis is a training aid. ICC compliance requires official biomechanical testing.</p>
 </footer>
 
 <script>
   const BACKEND_URL = window.location.origin;
-  let selectedFile  = null;
-  let pollInterval  = null;
-  let elapsedSec    = 0;
+  let selectedFile = null, pollInterval = null, elapsedSec = 0;
 
   document.getElementById('file-input').addEventListener('change', function () {
-    if (this.files.length === 0) return;
-    setFile(this.files[0]);
+    if (this.files.length) setFile(this.files[0]);
   });
 
   function setFile(file) {
     selectedFile = file;
     document.getElementById('file-name-label').textContent = file.name;
     document.getElementById('file-size-label').textContent = formatBytes(file.size);
-    document.getElementById('file-preview').style.display  = 'flex';
-    document.getElementById('btn-analyze').style.display   = 'block';
+    document.getElementById('file-preview').style.display = 'flex';
+    document.getElementById('btn-analyze').style.display = 'block';
   }
 
-  function handleDragOver(e)  { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
-  function handleDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-over'); }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+  function handleDragLeave() { document.getElementById('drop-zone').classList.remove('drag-over'); }
   function handleDrop(e) {
     e.preventDefault();
     document.getElementById('drop-zone').classList.remove('drag-over');
@@ -833,93 +453,75 @@ function switchTab(id){
 
   function startUpload() {
     if (!selectedFile) return;
-    document.getElementById('upload-card').style.display      = 'none';
+    document.getElementById('upload-card').style.display = 'none';
     document.getElementById('processing-panel').style.display = 'block';
-    document.getElementById('results-panel').style.display    = 'none';
+    document.getElementById('results-panel').style.display = 'none';
     elapsedSec = 0;
-
     const subText = document.getElementById('processing-sub-text');
-    if (subText) subText.textContent = 'Waking up server… (first request may take 30s)';
-
-    fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(45000) })
-      .catch(() => {})
-      .finally(() => {
-        if (subText) subText.textContent = 'Uploading video…';
-        doUpload();
-      });
+    if (subText) subText.textContent = 'Waking up server…';
+    fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(45000) }).catch(() => {}).finally(() => {
+      if (subText) subText.textContent = 'Uploading video…';
+      doUpload();
+    });
   }
 
   function doUpload() {
-    const subText  = document.getElementById('processing-sub-text');
+    const subText = document.getElementById('processing-sub-text');
     const formData = new FormData();
     formData.append('video', selectedFile);
-
-    fetch(`${BACKEND_URL}/upload`, {
-      method: 'POST',
-      body:   formData,
-      signal: AbortSignal.timeout(300000)
-    })
-    .then(r => {
-      if (!r.ok) throw new Error('Server error ' + r.status);
-      return r.json();
-    })
-    .then(data => {
-      if (data.job_id) {
-        if (subText) subText.textContent = 'Mapping joints · Computing angles · 0s elapsed';
-        elapsedSec = 0;
-        startPolling(data.job_id);
-      } else if (data.video_url) {
-        showResults(data);
-      } else {
-        throw new Error(data.error || 'Unexpected server response');
-      }
-    })
-    .catch(err => {
-      const msg = err.name === 'TimeoutError'
-        ? 'Request timed out. Reload the page and try again.'
-        : 'Upload failed: ' + err.message;
-      alert(msg);
-      resetTool();
-    });
+    fetch(`${BACKEND_URL}/upload`, { method: 'POST', body: formData, signal: AbortSignal.timeout(300000) })
+      .then(r => { if (!r.ok) throw new Error('Server error ' + r.status); return r.json(); })
+      .then(data => {
+        if (data.job_id) {
+          if (subText) subText.textContent = 'Mapping 3D joints · ICC elbow check · 0s elapsed';
+          elapsedSec = 0;
+          startPolling(data.job_id);
+        } else if (data.video_url) {
+          showResults(data);
+        } else throw new Error(data.error || 'Unexpected response');
+      })
+      .catch(err => {
+        alert(err.name === 'TimeoutError' ? 'Request timed out.' : 'Upload failed: ' + err.message);
+        resetTool();
+      });
   }
 
   function startPolling(jobId) {
     pollInterval = setInterval(() => {
       elapsedSec += 3;
       updateProcessingLabel();
-
       fetch(`${BACKEND_URL}/status/${jobId}`)
         .then(r => r.json())
         .then(data => {
-          if (data.status === 'done') {
-            clearInterval(pollInterval);
-            showResults(data);
-          } else if (data.status === 'error') {
-            clearInterval(pollInterval);
-            alert('Processing failed: ' + (data.error || 'Unknown error'));
-            resetTool();
-          }
-        })
-        .catch(() => { /* transient network blip — keep polling */ });
+          if (data.status === 'done') { clearInterval(pollInterval); showResults(data); }
+          else if (data.status === 'error') { clearInterval(pollInterval); alert('Processing failed: ' + (data.error || '')); resetTool(); }
+        }).catch(() => {});
     }, 3000);
   }
 
   function updateProcessingLabel() {
     const sub = document.getElementById('processing-sub-text');
     if (!sub) return;
-    const mins = Math.floor(elapsedSec / 60);
-    const secs = elapsedSec % 60;
-    const t    = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-    sub.textContent = `Mapping joints · Computing angles · ${t} elapsed`;
+    const mins = Math.floor(elapsedSec / 60), secs = elapsedSec % 60;
+    sub.textContent = `Mapping 3D joints · ICC elbow check · ${mins > 0 ? mins + 'm ' + secs + 's' : secs + 's'} elapsed`;
   }
 
   function rate(elId, val, goodMin, goodMax, warnMin, warnMax) {
     const el = document.getElementById(elId);
-    if (!el) return;
+    if (!el || val == null || isNaN(val)) return;
+    el.classList.remove('good', 'warn', 'poor', 'legal', 'illegal');
+    if (val >= goodMin && val <= goodMax) el.classList.add('good');
+    else if (val >= warnMin && val <= warnMax) el.classList.add('warn');
+    else el.classList.add('poor');
+  }
+
+  function rateLowerBetter(elId, val, goodMax, warnMax) {
+    const el = document.getElementById(elId);
+    if (!el || val == null || isNaN(val)) return;
     el.classList.remove('good', 'warn', 'poor');
-    if (val >= goodMin && val <= goodMax)       el.classList.add('good');
-    else if (val >= warnMin && val <= warnMax)  el.classList.add('warn');
-    else                                        el.classList.add('poor');
+    if (val <= goodMax) el.classList.add('good');
+    else if (val <= warnMax) el.classList.add('warn');
+    else el.classList.add('poor');
   }
 
   function adjustPlaybackSpeed(v) {
@@ -929,31 +531,52 @@ function switchTab(id){
 
   function showResults(data) {
     document.getElementById('processing-panel').style.display = 'none';
-
     const finalVideoPath = `${BACKEND_URL}${data.video_url}`;
     const player = document.getElementById('output-player');
     player.src = `${finalVideoPath}?t=${Date.now()}`;
     player.load();
-
     document.getElementById('video-speed-controller').value = '1.0';
     player.playbackRate = 1.0;
-
     document.getElementById('video-download-anchor').href = finalVideoPath;
 
     if (data.summary) {
       const s = data.summary;
 
-      document.getElementById('st-strides').textContent = s.strides ?? '—';
-      rate('st-strides', s.strides, 10, 20, 5, 9);
+      document.getElementById('st-icc-ext').textContent = s.icc_elbow_extension != null ? s.icc_elbow_extension + '°' : '—';
+      rateLowerBetter('st-icc-ext', s.icc_elbow_extension, 15, 20);
 
-      document.getElementById('st-lknee').textContent = s.avg_l_knee ? s.avg_l_knee + '°' : '—';
-      rate('st-lknee', s.avg_l_knee, 165, 180, 140, 164);
+      const legalEl = document.getElementById('st-icc-legal');
+      legalEl.classList.remove('good', 'warn', 'poor', 'legal', 'illegal');
+      if (s.icc_legal !== undefined) {
+        legalEl.textContent = s.icc_legal ? 'LEGAL' : 'ILLEGAL';
+        legalEl.classList.add(s.icc_legal ? 'legal' : 'illegal');
+      } else legalEl.textContent = '—';
 
-      document.getElementById('st-rknee').textContent = s.avg_r_knee ? s.avg_r_knee + '°' : '—';
-      rate('st-rknee', s.avg_r_knee, 165, 180, 140, 164);
+      document.getElementById('st-release-ang').textContent = s.release_elbow_angle ? s.release_elbow_angle + '°' : '—';
+
+      document.getElementById('st-front-knee').textContent = s.front_knee ? s.front_knee + '°' : '—';
+      rate('st-front-knee', s.front_knee, 165, 180, 140, 164);
+
+      document.getElementById('st-back-knee').textContent = s.back_knee ? s.back_knee + '°' : '—';
+      rate('st-back-knee', s.back_knee, 165, 180, 140, 164);
+
+      document.getElementById('st-shoulder').textContent = s.shoulder_alignment ? s.shoulder_alignment + '°' : '—';
+      rateLowerBetter('st-shoulder', s.shoulder_alignment, 30, 60);
+
+      document.getElementById('st-hip-rot').textContent = s.hip_rotation ? s.hip_rotation + '°' : '—';
+      rate('st-hip-rot', s.hip_rotation, 15, 45, 5, 14);
 
       document.getElementById('st-rel').textContent = s.avg_release_score ?? '—';
       rate('st-rel', s.avg_release_score, 35, 999, 20, 34);
+
+      document.getElementById('st-runup').textContent = s.run_up_length ? s.run_up_length + '%' : '—';
+      rate('st-runup', s.run_up_length, 80, 999, 50, 79);
+
+      document.getElementById('st-stride-len').textContent = s.stride_length ? s.stride_length + '%' : '—';
+      rate('st-stride-len', s.stride_length, 70, 120, 50, 69);
+
+      document.getElementById('st-strides').textContent = s.strides ?? '—';
+      rate('st-strides', s.strides, 10, 20, 5, 9);
 
       document.getElementById('st-vel').textContent = s.avg_velocity ?? '—';
       rate('st-vel', s.avg_velocity, 300, 99999, 100, 299);
@@ -966,16 +589,15 @@ function switchTab(id){
 
   function resetTool() {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-    elapsedSec   = 0;
-    selectedFile = null;
-    document.getElementById('file-input').value            = '';
-    document.getElementById('file-preview').style.display  = 'none';
-    document.getElementById('btn-analyze').style.display   = 'none';
-    document.getElementById('output-player').src           = '';
-    document.getElementById('video-download-anchor').href  = '#';
-    document.getElementById('upload-card').style.display      = 'block';
+    elapsedSec = 0; selectedFile = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('file-preview').style.display = 'none';
+    document.getElementById('btn-analyze').style.display = 'none';
+    document.getElementById('output-player').src = '';
+    document.getElementById('video-download-anchor').href = '#';
+    document.getElementById('upload-card').style.display = 'block';
     document.getElementById('processing-panel').style.display = 'none';
-    document.getElementById('results-panel').style.display    = 'none';
+    document.getElementById('results-panel').style.display = 'none';
     document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
   }
 
