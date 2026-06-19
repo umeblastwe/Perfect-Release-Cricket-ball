@@ -213,6 +213,23 @@ class ICCExtensionTracker:
 
         return self.extension_deg, self.release_elbow_angle, self.state, self.legal
 
+    def overlay_values(self, current_elbow_angle):
+        """
+        Values for on-screen HUD — visible throughout the entire video.
+        live_ext: updates frame-by-frame during delivery; None when between deliveries.
+        peak_ext: highest extension captured so far (persists for whole clip).
+        """
+        live_ext = None
+        if self.state in ("DELIVERY", "DONE"):
+            live_ext = self.extension_deg
+        elif self.angle_at_horizontal is not None and current_elbow_angle is not None:
+            live_ext = max(0.0, current_elbow_angle - self.angle_at_horizontal)
+
+        peak_ext = max(self.peak_extension, self.extension_deg if live_ext is not None else 0.0)
+        status_ext = live_ext if live_ext is not None else peak_ext
+        legal = status_ext <= ICC_MAX_ELBOW_EXTENSION if status_ext > 0 else True
+        return live_ext, peak_ext, self.release_elbow_angle, legal
+
 
 # ──────────────────────────────────────────────────────
 # DELIVERY PHASE DETECTOR (front/back leg, stride, release)
@@ -452,6 +469,69 @@ def process_bowling_video(video_path, output_path, job_id):
             cv2.addWeighted(ov, 0.65, img, 0.35, 0, img)
             cv2.putText(img, text, (x, y), fnt, sf, color, fth, cv2.LINE_AA)
 
+        def draw_icc_hud(img, live_ext, peak_ext, rel_ang, legal, icc_state, angle_at_horizontal, current_elbow):
+            """Persistent top-right ICC extension panel — shown every tracked frame."""
+            hud_sf = max(sf * 0.88, 0.28)
+            hud_th = max(1, int(hud_sf * 2))
+            fnt = cv2.FONT_HERSHEY_SIMPLEX
+            lines = ["ICC ELBOW EXTENSION"]
+
+            if live_ext is not None:
+                lines.append(f"Live: {live_ext:.1f} deg")
+            elif icc_state == "IDLE":
+                lines.append("Live: awaiting delivery")
+            else:
+                lines.append("Live: --")
+
+            if peak_ext > 0:
+                lines.append(f"Peak: {peak_ext:.1f} deg")
+            else:
+                lines.append("Peak: 0.0 deg")
+
+            if rel_ang and rel_ang > 0 and icc_state in ("DELIVERY", "DONE"):
+                lines.append(f"Elbow at release: {int(rel_ang)} deg")
+            elif current_elbow is not None:
+                lines.append(f"Elbow angle: {int(current_elbow)} deg")
+
+            if angle_at_horizontal is not None:
+                lines.append(f"At horizontal: {int(angle_at_horizontal)} deg")
+
+            if peak_ext > 0 or live_ext is not None:
+                status = "LEGAL (<=15)" if legal else "ILLEGAL (>15)"
+            else:
+                status = "TRACKING"
+            lines.append(status)
+
+            widths = [cv2.getTextSize(t, fnt, hud_sf, hud_th)[0][0] for t in lines]
+            box_w = max(widths) + pad * 3
+            line_h_px = int(hud_sf * 28)
+            box_h = line_h_px * len(lines) + pad * 2
+            x0 = proc_w - box_w - pad
+            y0 = pad
+
+            ov = img.copy()
+            cv2.rectangle(ov, (x0, y0), (x0 + box_w, y0 + box_h), (10, 14, 22), -1)
+            cv2.rectangle(ov, (x0, y0), (x0 + box_w, y0 + box_h), (0, 242, 254), 1)
+            cv2.addWeighted(ov, 0.78, img, 0.22, 0, img)
+
+            for i, text in enumerate(lines):
+                y = y0 + pad + int(hud_sf * 22) + i * line_h_px
+                if i == 0:
+                    col = (0, 242, 254)
+                elif text.startswith("Live:"):
+                    col = (0, 255, 0) if live_ext is not None and live_ext <= ICC_MAX_ELBOW_EXTENSION else (
+                        (0, 0, 255) if live_ext is not None and live_ext > ICC_MAX_ELBOW_EXTENSION else (200, 200, 200)
+                    )
+                elif text.startswith("Peak:"):
+                    col = (0, 255, 0) if peak_ext <= ICC_MAX_ELBOW_EXTENSION else (0, 0, 255)
+                elif "LEGAL" in text:
+                    col = (0, 255, 0) if "LEGAL" in text and "ILLEGAL" not in text else (
+                        (0, 0, 255) if "ILLEGAL" in text else (200, 200, 200)
+                    )
+                else:
+                    col = (232, 234, 242)
+                cv2.putText(img, text, (x0 + pad, y), fnt, hud_sf, col, hud_th, cv2.LINE_AA)
+
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -543,7 +623,9 @@ def process_bowling_video(video_path, output_path, job_id):
                         ww = wlm[mp_pose.PoseLandmark.LEFT_WRIST if bowling_side == "left" else mp_pose.PoseLandmark.RIGHT_WRIST]
                         ea_3d = joint_angle_3d(ws, we, ww)
 
+                    current_elbow = ea_3d if ea_3d is not None else ea_2d
                     ext, rel_ang, icc_state, legal = icc.update(b_sh, b_elb, b_wri, ea_3d, ea_2d)
+                    live_ext, peak_ext, hud_rel, hud_legal = icc.overlay_values(current_elbow)
 
                     if icc.peak_extension > peak_icc_extension:
                         peak_icc_extension = icc.peak_extension
@@ -559,23 +641,22 @@ def process_bowling_video(video_path, output_path, job_id):
                     wx = int(b_wri.x * proc_w)
                     wy = int(b_wri.y * proc_h)
 
-                    if icc_state in ("DELIVERY", "DONE"):
-                        if ext <= ICC_MAX_ELBOW_EXTENSION:
-                            col_status = (0, 255, 0)
-                            legal_lbl = f"ICC Ext: {ext:.1f} deg (LEGAL <=15)"
-                        else:
-                            col_status = (0, 0, 255)
-                            legal_lbl = f"ICC Ext: {ext:.1f} deg (ILLEGAL >15)"
-                        put_label(frame, legal_lbl, wx + 14, wy - 44, col_status)
-                        put_label(frame, f"Elbow at release: {int(rel_ang)} deg", wx + 14, wy - 22, (232, 234, 242))
-                        if icc.angle_at_horizontal is not None:
-                            put_label(
-                                frame,
-                                f"At horizontal: {int(icc.angle_at_horizontal)} deg",
-                                wx + 14, wy - 2, (180, 180, 180),
-                            )
+                    # Wrist-adjacent ICC readout — every frame while bowling arm is tracked
+                    display_ext = live_ext if live_ext is not None else peak_ext
+                    if display_ext > 0 or icc_state in ("DELIVERY", "DONE"):
+                        col_status = (0, 255, 0) if display_ext <= ICC_MAX_ELBOW_EXTENSION else (0, 0, 255)
+                        tag = "LIVE" if icc_state == "DELIVERY" else ("HELD" if icc_state == "DONE" else "PEAK")
+                        put_label(frame, f"ICC Ext ({tag}): {display_ext:.1f} deg", wx + 14, wy - 44, col_status)
+                        put_label(frame, f"Peak ICC Ext: {peak_ext:.1f} deg", wx + 14, wy - 22, col_status)
+                        put_label(frame, f"Elbow: {int(current_elbow)} deg", wx + 14, wy - 2, (232, 234, 242))
                     else:
-                        put_label(frame, f"Elbow: {int(ea_3d or ea_2d)} deg", wx + 14, wy - 8, (200, 200, 200))
+                        put_label(frame, f"ICC Ext: tracking… Elbow {int(current_elbow)} deg", wx + 14, wy - 8, (200, 200, 200))
+
+                    # Fixed HUD — visible throughout entire video
+                    draw_icc_hud(
+                        frame, live_ext, peak_ext, hud_rel, hud_legal,
+                        icc_state, icc.angle_at_horizontal, current_elbow,
+                    )
 
             delivery.feed_stride_counter(l_ankle, r_ankle)
             put_label(frame, f"Strides: {delivery.stride_count}", 16, line_h, (255, 255, 255))
